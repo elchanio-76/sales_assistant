@@ -59,11 +59,12 @@
 - [x] Configure alembic.ini with database connection
 - [x] Update alembic/env.py to import models
 - [x] Generate initial migration for all models
-- [ ] Test migration: alembic upgrade head
-- [ ] Test rollback: alembic downgrade -1
-- [ ] Document migration commands in README
+- [x] Test migration: alembic upgrade head
+- [x] Test rollback: alembic downgrade -1
+- [x] Document migration commands in README
 
 ### 2.4 Database CRUD Operations
+
 - [ ] Create app/services/database.py
 - [ ] Implement Prospect CRUD operations (create, read, update, list)
 - [ ] Implement Company CRUD operations
