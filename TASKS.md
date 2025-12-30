@@ -33,29 +33,32 @@
 ## Task 2: Database Foundation
 
 ### 2.1 Database Models - Core Entities
-- [ ] Create app/models/database.py
-- [ ] Implement Prospect model (all fields from spec 3.1)
-- [ ] Implement Company model with JSONB fields
-- [ ] Implement AWSolution model
-- [ ] Implement ProspectResearch model
-- [ ] Implement Interaction model
-- [ ] Implement OutreachDraft model
-- [ ] Implement Event model
-- [ ] Implement LLMUsageLog model
+
+- [x] Create app/models/database.py
+- [x] Implement Prospect model (all fields from spec 3.1)
+- [x] Implement Company model with JSONB fields
+- [x] Implement AWSolution model
+- [x] Implement ProspectResearch model
+- [x] Implement Interaction model
+- [x] Implement OutreachDraft model
+- [x] Implement Event model
+- [x] Implement LLMUsageLog model
 - [ ] Test model instantiation with valid data
 
 ### 2.2 Database Models - Enums and Relationships
+
 - [ ] Define ProspectStatus enum
 - [ ] Define InteractionType enum
-- [ ] Add foreign key relationships (ProspectResearch → Prospect, etc.)
+- [x] Add foreign key relationships (ProspectResearch → Prospect, etc.)
 - [ ] Add indexes per spec section 14.3
 - [ ] Test relationship loading
 
 ### 2.3 Alembic Setup and Initial Migration
-- [ ] Initialize Alembic (alembic init alembic)
-- [ ] Configure alembic.ini with database connection
-- [ ] Update alembic/env.py to import models
-- [ ] Generate initial migration for all models
+
+- [x] Initialize Alembic (alembic init alembic)
+- [x] Configure alembic.ini with database connection
+- [x] Update alembic/env.py to import models
+- [x] Generate initial migration for all models
 - [ ] Test migration: alembic upgrade head
 - [ ] Test rollback: alembic downgrade -1
 - [ ] Document migration commands in README

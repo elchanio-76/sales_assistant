@@ -1,7 +1,7 @@
 from sqlalchemy import  Integer, String, ForeignKey, DateTime, Boolean, Text, Float, JSON
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship, Mapped, mapped_column, DeclarativeBase
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Optional
 import pytz
 
@@ -220,14 +220,32 @@ class LLMUsageLog:
         onupdate=datetime.now(tz= pytz.timezone("Europe/Athens"))
     )
 
-
-def main():
-    from sqlalchemy import create_engine, text
-    from sqlalchemy.orm import sessionmaker
-    from sqlalchemy.ext.declarative import declarative_base
+# create_database() creates the database tables and initializes the Alembic version table
+# You should only need to run this once. 
+def create_database():
+    from sqlalchemy import create_engine
 
     engine = create_engine("postgresql://postgres:postgres@localhost:5432/sales_test", echo = True)
     Base.metadata.create_all(engine)
+
+    # then, load the Alembic configuration and generate the
+    # version table, "stamping" it with the most recent rev:
+    from alembic.config import Config
+    from alembic import command
+    alembic_cfg = Config("alembic.ini") # run with uv run from project root, or change to absolute path
+    command.stamp(alembic_cfg, "head")
+
+def main():
+    import argparse
+    arg_parser = argparse.ArgumentParser(description="Database management script")
+    arg_parser.add_argument("command", choices=["create_database"], help="Command to execute")
+    args = arg_parser.parse_args()
+
+    if args.command == "create_database":
+        create_database()
+    else:
+        print("Use'python database.py create_database' to create the database tables and initialize the Alembic version table")
+
 
 if __name__ == "__main__":
     main()
