@@ -198,7 +198,7 @@ class OutreachDraft(Base):
     # Many-to-one relationship with Prospect
     prospect: Mapped["Prospect"] = relationship("Prospect")
 
-class LLMUsageLog:
+class LLMUsageLog(Base):
     __tablename__ = "llm_usage_logs"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
