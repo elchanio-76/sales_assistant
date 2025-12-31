@@ -1,246 +1,212 @@
 # Database Schema Documentation
 
 ## Overview
+Sales assistant database containing prospect management, event tracking, solutions catalog, and LLM usage analytics.
 
-This database schema supports a sales assistant application that manages prospects, companies, events, solutions, and outreach activities. The schema includes tracking for AI/LLM usage, research insights, and interaction history.
+---
 
 ## Tables
 
 ### alembic_version
+Migration version tracking table.
 
-Database migration version tracking table (managed by Alembic).
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| version_num | VARCHAR(32) | PRIMARY KEY, NOT NULL | Current migration version identifier |
-
----
-
-### events
-
-Stores information about sales events, conferences, and other business gatherings.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | SERIAL | PRIMARY KEY, NOT NULL | Unique event identifier |
-| event_type | VARCHAR(255) | NOT NULL | Type/category of the event |
-| event_date | TIMESTAMP | NOT NULL | Date and time of the event |
-| description | TEXT | NOT NULL | Detailed event description |
-| location | VARCHAR(255) | NOT NULL | Event location |
-| target_industries | JSONB | | Industries targeted by this event |
-| target_roles | JSONB | | Job roles/titles targeted by this event |
-| solutions_featured | JSONB | | Solutions or products featured at the event |
-| status | VARCHAR(255) | NOT NULL | Current event status |
-| created_at | TIMESTAMP | NOT NULL | Record creation timestamp |
-| updated_at | TIMESTAMP | NOT NULL | Record last update timestamp |
+| Column | Type | Constraints |
+|--------|------|-------------|
+| version_num | VARCHAR(32) | PRIMARY KEY, NOT NULL |
 
 ---
 
 ### industries
+Industry classifications for companies and solutions.
 
-Master list of industry classifications.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | SERIAL | PRIMARY KEY, NOT NULL | Unique industry identifier |
-| name | VARCHAR(255) | NOT NULL | Industry name |
-| created_at | TIMESTAMP | NOT NULL | Record creation timestamp |
-| updated_at | TIMESTAMP | NOT NULL | Record last update timestamp |
-
----
-
-### llm_usage_logs
-
-Tracks usage and performance metrics for LLM/AI operations.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | SERIAL | PRIMARY KEY, NOT NULL | Unique log entry identifier |
-| worfklow_name | VARCHAR(255) | NOT NULL | Name of the workflow using the LLM |
-| node_name | VARCHAR(255) | NOT NULL | Specific node/step in the workflow |
-| model | VARCHAR(255) | NOT NULL | LLM model identifier |
-| prompt_tokens | INTEGER | NOT NULL | Number of tokens in the prompt |
-| completion_tokens | INTEGER | NOT NULL | Number of tokens in the completion |
-| total_tokens | INTEGER | NOT NULL | Total tokens used |
-| latency_ms | INTEGER | NOT NULL | Response latency in milliseconds |
-| cost | DOUBLE PRECISION | NOT NULL | Cost of the LLM operation |
-| created_at | TIMESTAMP | NOT NULL | Record creation timestamp |
-| updated_at | TIMESTAMP | NOT NULL | Record last update timestamp |
-
----
-
-### solutions
-
-Catalog of products, services, or solutions offered.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | SERIAL | PRIMARY KEY, NOT NULL | Unique solution identifier |
-| name | VARCHAR(255) | NOT NULL | Solution name |
-| category | VARCHAR(255) | NOT NULL | Solution category/type |
-| description | TEXT | NOT NULL | Detailed solution description |
-| use_cases | JSONB | | Common use cases for this solution |
-| keywords | JSONB | | Keywords for search/matching |
-| pricing_model | VARCHAR(255) | NOT NULL | Pricing structure |
-| created_at | TIMESTAMP | NOT NULL | Record creation timestamp |
-| updated_at | TIMESTAMP | NOT NULL | Record last update timestamp |
+| Column | Type | Constraints |
+|--------|------|-------------|
+| id | SERIAL | PRIMARY KEY |
+| name | VARCHAR(255) | NOT NULL |
+| created_at | TIMESTAMP | NOT NULL |
+| updated_at | TIMESTAMP | NOT NULL |
 
 ---
 
 ### companies
+Company information linked to industries.
 
-Organizations that prospects belong to.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | SERIAL | PRIMARY KEY, NOT NULL | Unique company identifier |
-| name | VARCHAR(255) | NOT NULL | Company name |
-| industry_id | INTEGER | NOT NULL, FOREIGN KEY → industries(id) | Associated industry |
-| size | VARCHAR(255) | NOT NULL | Company size category |
-| website | VARCHAR(255) | | Company website URL |
-| created_at | TIMESTAMP | NOT NULL | Record creation timestamp |
-| updated_at | TIMESTAMP | NOT NULL | Record last update timestamp |
-
-**Foreign Keys:**
-- `industry_id` → `industries(id)`
-
----
-
-### industry_solutions
-
-Junction table mapping industries to relevant solutions (many-to-many relationship).
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| industry_id | INTEGER | PRIMARY KEY, NOT NULL, FOREIGN KEY → industries(id) | Industry identifier |
-| solution_id | INTEGER | PRIMARY KEY, NOT NULL, FOREIGN KEY → solutions(id) | Solution identifier |
-| created_at | TIMESTAMP | NOT NULL | Record creation timestamp |
-| updated_at | TIMESTAMP | NOT NULL | Record last update timestamp |
-
-**Primary Key:** Composite key on (industry_id, solution_id)
-
-**Foreign Keys:**
-- `industry_id` → `industries(id)`
-- `solution_id` → `solutions(id)`
+| Column | Type | Constraints |
+|--------|------|-------------|
+| id | SERIAL | PRIMARY KEY |
+| name | VARCHAR(255) | NOT NULL |
+| industry_id | INTEGER | NOT NULL, FK → industries.id |
+| size | VARCHAR(255) | NOT NULL |
+| website | VARCHAR(255) | NULL |
+| created_at | TIMESTAMP | NOT NULL |
+| updated_at | TIMESTAMP | NOT NULL |
 
 ---
 
 ### prospects
+Sales prospects with contact information and engagement status.
 
-Individual contacts/leads for sales outreach.
+| Column | Type | Constraints |
+|--------|------|-------------|
+| id | SERIAL | PRIMARY KEY |
+| full_name | VARCHAR(255) | NOT NULL |
+| email | VARCHAR(255) | NOT NULL |
+| linkedin_url | VARCHAR(255) | NULL |
+| location | VARCHAR(255) | NULL |
+| company_id | INTEGER | NOT NULL, FK → companies.id |
+| last_contacted_at | TIMESTAMP | NULL |
+| is_active | BOOLEAN | NOT NULL |
+| status | prospect_status | NOT NULL |
+| created_at | TIMESTAMP | NOT NULL |
+| updated_at | TIMESTAMP | NOT NULL |
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | SERIAL | PRIMARY KEY, NOT NULL | Unique prospect identifier |
-| full_name | VARCHAR(255) | NOT NULL | Prospect's full name |
-| email | VARCHAR(255) | NOT NULL | Email address |
-| linkedin_url | VARCHAR(255) | | LinkedIn profile URL |
-| location | VARCHAR(255) | | Geographic location |
-| company_id | INTEGER | NOT NULL, FOREIGN KEY → companies(id) | Associated company |
-| last_contacted_at | TIMESTAMP | | Last contact timestamp |
-| is_active | BOOLEAN | NOT NULL | Whether prospect is active |
-| created_at | TIMESTAMP | NOT NULL | Record creation timestamp |
-| updated_at | TIMESTAMP | NOT NULL | Record last update timestamp |
+---
 
-**Foreign Keys:**
-- `company_id` → `companies(id)`
+### solutions
+Product/service solutions with pricing and categorization.
+
+| Column | Type | Constraints |
+|--------|------|-------------|
+| id | SERIAL | PRIMARY KEY |
+| name | VARCHAR(255) | NOT NULL |
+| category | VARCHAR(255) | NOT NULL |
+| description | TEXT | NOT NULL |
+| use_cases | JSONB | NULL |
+| keywords | JSONB | NULL |
+| pricing_model | pricing_models | NOT NULL |
+| created_at | TIMESTAMP | NOT NULL |
+| updated_at | TIMESTAMP | NOT NULL |
+
+---
+
+### industry_solutions
+Junction table linking industries to relevant solutions.
+
+| Column | Type | Constraints |
+|--------|------|-------------|
+| industry_id | INTEGER | NOT NULL, FK → industries.id, PRIMARY KEY |
+| solution_id | INTEGER | NOT NULL, FK → solutions.id, PRIMARY KEY |
+| created_at | TIMESTAMP | NOT NULL |
+| updated_at | TIMESTAMP | NOT NULL |
+
+---
+
+### events
+Sales events and conferences with targeting information.
+
+| Column | Type | Constraints |
+|--------|------|-------------|
+| id | SERIAL | PRIMARY KEY |
+| event_type | VARCHAR(255) | NOT NULL |
+| event_date | TIMESTAMP | NOT NULL |
+| description | TEXT | NOT NULL |
+| location | VARCHAR(255) | NOT NULL |
+| target_industries | JSONB | NULL |
+| target_roles | JSONB | NULL |
+| solutions_featured | JSONB | NULL |
+| status | VARCHAR(255) | NOT NULL |
+| created_at | TIMESTAMP | NOT NULL |
+| updated_at | TIMESTAMP | NOT NULL |
 
 ---
 
 ### interactions
+Prospect interaction history (emails, calls, meetings, etc.).
 
-History of all interactions with prospects.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | SERIAL | PRIMARY KEY, NOT NULL | Unique interaction identifier |
-| prospect_id | INTEGER | NOT NULL, FOREIGN KEY → prospects(id) | Associated prospect |
-| event_id | INTEGER | FOREIGN KEY → events(id) | Associated event (if applicable) |
-| interaction_type | VARCHAR(255) | NOT NULL | Type of interaction |
-| interaction_date | TIMESTAMP | NOT NULL | When the interaction occurred |
-| subject | VARCHAR(255) | NOT NULL | Interaction subject/title |
-| content | TEXT | NOT NULL | Full interaction content |
-| sentiment | VARCHAR(255) | | Detected sentiment of interaction |
-| outcome | TEXT | | Result or outcome of interaction |
-| created_at | TIMESTAMP | NOT NULL | Record creation timestamp |
-| updated_at | TIMESTAMP | NOT NULL | Record last update timestamp |
-
-**Foreign Keys:**
-- `prospect_id` → `prospects(id)`
-- `event_id` → `events(id)`
+| Column | Type | Constraints |
+|--------|------|-------------|
+| id | SERIAL | PRIMARY KEY |
+| prospect_id | INTEGER | NOT NULL, FK → prospects.id |
+| event_id | INTEGER | NULL, FK → events.id |
+| interaction_type | interaction_types | NOT NULL |
+| interaction_date | TIMESTAMP | NOT NULL |
+| subject | VARCHAR(255) | NOT NULL |
+| content | TEXT | NOT NULL |
+| sentiment | VARCHAR(255) | NULL |
+| outcome | TEXT | NULL |
+| created_at | TIMESTAMP | NOT NULL |
+| updated_at | TIMESTAMP | NOT NULL |
 
 ---
 
 ### outreach_drafts
+Generated outreach communication drafts.
 
-Drafts of outreach messages prepared for prospects.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | SERIAL | PRIMARY KEY, NOT NULL | Unique draft identifier |
-| prospect_id | INTEGER | NOT NULL, FOREIGN KEY → prospects(id) | Target prospect |
-| event_id | INTEGER | FOREIGN KEY → events(id) | Related event (if applicable) |
-| draft_type | VARCHAR(255) | NOT NULL | Type of outreach message |
-| content | TEXT | NOT NULL | Draft message content |
-| status | VARCHAR(255) | NOT NULL | Draft status |
-| created_at | TIMESTAMP | NOT NULL | Record creation timestamp |
-| updated_at | TIMESTAMP | NOT NULL | Record last update timestamp |
-
-**Foreign Keys:**
-- `prospect_id` → `prospects(id)`
-- `event_id` → `events(id)`
+| Column | Type | Constraints |
+|--------|------|-------------|
+| id | SERIAL | PRIMARY KEY |
+| prospect_id | INTEGER | NOT NULL, FK → prospects.id |
+| event_id | INTEGER | NULL, FK → events.id |
+| draft_type | VARCHAR(255) | NOT NULL |
+| content | TEXT | NOT NULL |
+| status | VARCHAR(255) | NOT NULL |
+| created_at | TIMESTAMP | NOT NULL |
+| updated_at | TIMESTAMP | NOT NULL |
 
 ---
 
 ### prospect_research
+Research findings and recommendations for prospects.
 
-AI-generated research and insights about prospects.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | SERIAL | PRIMARY KEY, NOT NULL | Unique research record identifier |
-| prospect_id | INTEGER | NOT NULL, FOREIGN KEY → prospects(id) | Associated prospect |
-| research_summary | TEXT | NOT NULL | Summary of research findings |
-| key_insights | JSONB | | Structured key insights |
-| recommended_solutions | JSONB | | Solutions recommended for this prospect |
-| confidence_score | DOUBLE PRECISION | | AI confidence score for recommendations |
-| created_at | TIMESTAMP | NOT NULL | Record creation timestamp |
-| updated_at | TIMESTAMP | NOT NULL | Record last update timestamp |
-
-**Foreign Keys:**
-- `prospect_id` → `prospects(id)`
+| Column | Type | Constraints |
+|--------|------|-------------|
+| id | SERIAL | PRIMARY KEY |
+| prospect_id | INTEGER | NOT NULL, FK → prospects.id |
+| research_summary | TEXT | NOT NULL |
+| key_insights | JSONB | NULL |
+| recommended_solutions | JSONB | NULL |
+| confidence_score | DOUBLE PRECISION | NULL |
+| created_at | TIMESTAMP | NOT NULL |
+| updated_at | TIMESTAMP | NOT NULL |
 
 ---
 
-## Relationships
+### llm_usage_logs
+LLM API usage tracking for cost and performance analytics.
 
-### One-to-Many Relationships
+| Column | Type | Constraints |
+|--------|------|-------------|
+| id | SERIAL | PRIMARY KEY |
+| worfklow_name | VARCHAR(255) | NOT NULL |
+| node_name | VARCHAR(255) | NOT NULL |
+| model | VARCHAR(255) | NOT NULL |
+| prompt_tokens | INTEGER | NOT NULL |
+| completion_tokens | INTEGER | NOT NULL |
+| total_tokens | INTEGER | NOT NULL |
+| latency_ms | INTEGER | NOT NULL |
+| cost | DOUBLE PRECISION | NOT NULL |
+| created_at | TIMESTAMP | NOT NULL |
+| updated_at | TIMESTAMP | NOT NULL |
 
-- **industries** → **companies**: One industry has many companies
-- **companies** → **prospects**: One company has many prospects
-- **prospects** → **interactions**: One prospect has many interactions
-- **prospects** → **outreach_drafts**: One prospect has many outreach drafts
-- **prospects** → **prospect_research**: One prospect has many research records
-- **events** → **interactions**: One event can have many interactions
-- **events** → **outreach_drafts**: One event can be referenced in many drafts
+---
 
-### Many-to-Many Relationships
+## Custom Types
 
-- **industries** ↔ **solutions**: Through `industry_solutions` junction table
+- **pricing_models**: Enum for solution pricing models
+- **prospect_status**: Enum for prospect engagement status
+- **interaction_types**: Enum for interaction/communication types
 
-## JSONB Fields
+---
 
-Several tables use JSONB for flexible, semi-structured data:
+## Key Relationships
 
-- **events**: `target_industries`, `target_roles`, `solutions_featured`
-- **solutions**: `use_cases`, `keywords`
-- **prospect_research**: `key_insights`, `recommended_solutions`
+```
+industries (1) ──────── (many) companies
+                               │
+                               └─── (many) prospects
+                                           │
+                    ┌──────────────────────┼──────────────┐
+                    │                      │              │
+              interactions          outreach_drafts  prospect_research
+              (FK: event_id)        (FK: event_id)
+                    │
+                 events
 
-## Audit Fields
+solutions ──────────── industry_solutions ──────────── industries
 
-All tables (except `alembic_version`) include standard audit timestamps:
-- `created_at`: Record creation timestamp
-- `updated_at`: Last modification timestamp
+llm_usage_logs (standalone analytics table)
+```
 
 ## ER Diagram
-![ER diagram](schema.png)
+
+![ER Diagram](schema.png)

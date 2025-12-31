@@ -113,7 +113,7 @@ class IndustrySolution(Base): # Reationship Table
         onupdate=datetime.now(tz= pytz.timezone("Europe/Athens"))
     )
     industries: Mapped["Industry"] = relationship("Industry", back_populates="industry_solutions")
-    solutions: Mapped["Solution"] = relationship("Solution", back_populates="industries")
+    solutions: Mapped["Solution"] = relationship("Solution", back_populates="industry_solutions")
 
 class Solution(Base):
     __tablename__ = "solutions"
@@ -134,8 +134,8 @@ class Solution(Base):
         default=datetime.now(tz= pytz.timezone("Europe/Athens")), 
         onupdate=datetime.now(tz= pytz.timezone("Europe/Athens"))
     )
-    # One-to-many relationship with IndustrySOlutions
-    industry_solutions: Mapped[list["IndustrySolution"]] = relationship("industry_solutions", back_populates="solutions")
+    # One-to-many relationship with IndustrySolution
+    industry_solutions: Mapped[list["IndustrySolution"]] = relationship("IndustrySolution", back_populates="solutions")
 
 class ProspectResearch(Base):
     __tablename__ = "prospect_research"

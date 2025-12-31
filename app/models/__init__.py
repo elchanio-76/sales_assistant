@@ -1,12 +1,11 @@
 from .database import Base, \
-    ProspectStatus, PricingModels, InteractionType, InteractionStatus, \
+    ProspectStatus, PricingModels, InteractionType, \
     Prospect, Interaction, Company, Industry, Solution, ProspectResearch, \
     OutreachDraft, Event, LLMUsageLog, IndustrySolution
 
-__all__ = []
-__all__.append[
+__all__ = [
     "Base",
-    "ProspectStatus", "PricingModels", "InteractionType", "InteractionStatus",
+    "ProspectStatus", "PricingModels", "InteractionType",
     "Prospect", "Interaction", "Company", "Industry", "Solution",
     "ProspectResearch", "OutreachDraft", "Event", "LLMUsageLog", "IndustrySolution"
 ]
