@@ -47,8 +47,9 @@
 
 ### 2.2 Database Models - Enums and Relationships
 
-- [ ] Define ProspectStatus enum
-- [ ] Define InteractionType enum
+- [x] Define ProspectStatus enum
+- [x] Define InteractionType enum
+- [x] Define PricingModels enum
 - [x] Add foreign key relationships (ProspectResearch → Prospect, etc.)
 - [ ] Add indexes per spec section 14.3
 - [ ] Test relationship loading

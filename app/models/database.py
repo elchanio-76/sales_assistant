@@ -1,10 +1,36 @@
 from sqlalchemy import  Integer, String, ForeignKey, DateTime, Boolean, Text, Float, JSON
-from sqlalchemy.dialects.postgresql import JSONB
+from enum import Enum
+from sqlalchemy.dialects.postgresql import JSONB, ENUM
 from sqlalchemy.orm import relationship, Mapped, mapped_column, DeclarativeBase
 from datetime import datetime
 from typing import Optional
 import pytz
 
+# Enums
+class ProspectStatus(Enum): # Not used yet
+    NEW = "new"
+    RESEARCHED = "researched"
+    CONTACTED = "contacted"
+    ENGAGED = "engaged"
+    QUALIFIED = "qualified"
+    INACTIVE = "inactive"
+
+class PricingModels(Enum):
+    ON_DEMAND = "on_demand"
+    SAVINGS_PLANS = "savings_plans"
+    RESERVED_INSTANCES = "reserved_instances"
+    PROSERVE = "proserve"
+    SUBSCRIPTION = "subscription"
+    PPA = "ppa"
+
+class InteractionType(Enum):
+    EMAIL = "email"
+    MEETING = "meeting"
+    CALL = "call"
+    EVENT = "event"
+    LINKEDIN = "linkedin"
+
+# Tables
 class Base(DeclarativeBase):
     pass
 
@@ -19,6 +45,7 @@ class Prospect(Base):
     company_id: Mapped[int] = mapped_column(ForeignKey("companies.id"))
     last_contacted_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    status: Mapped[ProspectStatus] = mapped_column(ENUM(ProspectStatus, name="prospect_status"), default=ProspectStatus.NEW)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, 
         default=datetime.now(tz= pytz.timezone("Europe/Athens"))
@@ -97,7 +124,7 @@ class Solution(Base):
     description: Mapped[str] = mapped_column(Text)
     use_cases: Mapped[JSONB] = mapped_column(JSONB, nullable=True)
     keywords: Mapped[Optional[JSONB]] = mapped_column(JSONB, nullable=True)
-    pricing_model: Mapped[str] = mapped_column(String(255))  # TODO: Change to enum
+    pricing_model: Mapped[Enum] = mapped_column(ENUM(PricingModels, name="pricing_models"))  # TODO: Change to enum
     created_at: Mapped[datetime] = mapped_column(
         DateTime, 
         default=datetime.now(tz= pytz.timezone("Europe/Athens"))
@@ -159,7 +186,7 @@ class Interaction(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     prospect_id: Mapped[int] = mapped_column(ForeignKey("prospects.id"))
     event_id: Mapped[Optional[int]] = mapped_column(ForeignKey("events.id"), nullable=True)
-    interaction_type: Mapped[str] = mapped_column(String(255))  # TODO: Change to enum
+    interaction_type: Mapped[Enum] = mapped_column(ENUM(InteractionType, name = "interaction_types"))  # TODO: Change to enum
     interaction_date: Mapped[datetime] = mapped_column(DateTime)
     subject: Mapped[str] = mapped_column(String(255))
     content: Mapped[str] = mapped_column(Text)
@@ -219,6 +246,9 @@ class LLMUsageLog(Base):
         default=datetime.now(tz= pytz.timezone("Europe/Athens")), 
         onupdate=datetime.now(tz= pytz.timezone("Europe/Athens"))
     )
+
+
+
 
 # create_database() creates the database tables and initializes the Alembic version table
 # You should only need to run this once. 

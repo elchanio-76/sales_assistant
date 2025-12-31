@@ -31,15 +31,16 @@ Creates database tables from models. Needs empty DB to be created first.
 
 Alembic is used for migrations. Check `pyproject.toml` for details of required packages.`
 Autogenerate migrations from models using:
+**Note:** You need to add `enum34` to your requirements.txt in order to use enums in migrations.
 
 ```bash
-uv run alembic revision --autogenerate -m "message"
+alembic revision --autogenerate -m "message"
 ```
 
 Then run migrations using:
 
 ```bash
-uv run alembic upgrade head
+alembic upgrade head
 ```
 
 Downgrade using:
