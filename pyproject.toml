@@ -9,6 +9,7 @@ dependencies = [
     "alembic[tz]>=1.17.2",
     "enum34>=1.1.10",
     "eralchemy2>=1.4.1",
+    "pgvector>=0.4.2",
     "psycopg2-binary>=2.9.11",
     "pydantic>=2.12.5",
     "pydantic-settings>=2.12.0",

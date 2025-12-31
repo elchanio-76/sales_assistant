@@ -5,6 +5,8 @@ from sqlalchemy.orm import relationship, Mapped, mapped_column, DeclarativeBase
 from datetime import datetime
 from typing import Optional
 import pytz
+from pgvector.sqlalchemy import Vector
+from sqlalchemy import create_engine, text
 
 # Enums
 class ProspectStatus(Enum): # Not used yet
@@ -248,14 +250,17 @@ class LLMUsageLog(Base):
     )
 
 
-
-
 # create_database() creates the database tables and initializes the Alembic version table
 # You should only need to run this once. 
 def create_database():
     from sqlalchemy import create_engine
 
     engine = create_engine("postgresql://postgres:postgres@localhost:5432/sales_test", echo = True)
+
+    # Enable pgvector extension
+    with engine.connect() as conn:
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+
     Base.metadata.create_all(engine)
 
     # then, load the Alembic configuration and generate the
