@@ -10,19 +10,28 @@ import sys
 import os
 
 # Add app directory to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
+)
 
 from app.models.database import (
-    Base, Interaction, OutreachDraft, Event, LLMUsageLog,
-    Prospect, Company, Industry, ProspectStatus, InteractionType
+    Base,
+    Interaction,
+    OutreachDraft,
+    Event,
+    LLMUsageLog,
+    Prospect,
+    Company,
+    Industry,
+    ProspectStatus,
+    InteractionType,
 )
 import app.services.db_crud as crud
 
 
 # Test database configuration
 TEST_DATABASE_URL = os.getenv(
-    "TEST_DATABASE_URL",
-    "postgresql://postgres:postgres@localhost:5432/sales_test"
+    "TEST_DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/sales_test"
 )
 
 
@@ -35,13 +44,17 @@ def test_db_engine():
     # Minimal cleanup
     with engine.connect() as conn:
         conn.execute(text("COMMIT"))
-        result = conn.execute(text("""
+        result = conn.execute(
+            text(
+                """
             SELECT tablename FROM pg_tables
             WHERE schemaname = 'public' AND tablename != 'alembic_version'
-        """))
+        """
+            )
+        )
         tables = [row[0] for row in result]
         if tables:
-            tables_str = ', '.join(tables)
+            tables_str = ", ".join(tables)
             conn.execute(text(f"TRUNCATE TABLE {tables_str} RESTART IDENTITY CASCADE"))
             conn.execute(text("COMMIT"))
     engine.dispose()
@@ -73,11 +86,7 @@ def sample_industry(test_session):
 @pytest.fixture(scope="function")
 def sample_company(test_session, sample_industry):
     """Create a sample company for testing."""
-    company = Company(
-        name="Test Corp",
-        industry_id=sample_industry.id,
-        size="100-500"
-    )
+    company = Company(name="Test Corp", industry_id=sample_industry.id, size="100-500")
     test_session.add(company)
     test_session.commit()
     test_session.refresh(company)
@@ -91,7 +100,7 @@ def sample_prospect(test_session, sample_company):
         full_name="John Doe",
         email="john@example.com",
         company_id=sample_company.id,
-        status=ProspectStatus.NEW
+        status=ProspectStatus.NEW,
     )
     test_session.add(prospect)
     test_session.commit()
@@ -107,7 +116,7 @@ def sample_event(test_session):
         event_date=datetime(2025, 6, 15),
         description="AWS Summit 2025",
         location="Las Vegas, NV",
-        status="planned"
+        status="planned",
     )
     test_session.add(event)
     test_session.commit()
@@ -118,14 +127,17 @@ def sample_event(test_session):
 @pytest.fixture(autouse=True)
 def mock_session_local(monkeypatch, test_session):
     """Mock SessionLocal to return test session."""
+
     def mock_session_maker():
         return test_session
+
     monkeypatch.setattr(crud, "SessionLocal", mock_session_maker)
 
 
 # ============================================================================
 # Interaction Tests
 # ============================================================================
+
 
 class TestInteractionCRUD:
     """Test suite for Interaction CRUD operations."""
@@ -137,7 +149,7 @@ class TestInteractionCRUD:
             interaction_type=InteractionType.EMAIL,
             interaction_date=datetime.now(),
             subject="Initial outreach",
-            content="Test email content"
+            content="Test email content",
         )
 
         result = crud.create_or_update_interaction(interaction)
@@ -150,7 +162,7 @@ class TestInteractionCRUD:
             interaction_type=InteractionType.EMAIL,
             interaction_date=datetime.now(),
             subject="Test",
-            content="Test content"
+            content="Test content",
         )
 
         result = crud.create_or_update_interaction(interaction)
@@ -164,7 +176,7 @@ class TestInteractionCRUD:
             interaction_type=InteractionType.CALL,
             interaction_date=datetime.now(),
             subject="Follow-up call",
-            content="Discussed requirements"
+            content="Discussed requirements",
         )
         test_session.add(interaction)
         test_session.commit()
@@ -180,7 +192,7 @@ class TestInteractionCRUD:
             interaction_type=InteractionType.MEETING,
             interaction_date=datetime.now(),
             subject="Product demo",
-            content="Demonstrated key features"
+            content="Demonstrated key features",
         )
         test_session.add(interaction)
         test_session.commit()
@@ -199,7 +211,7 @@ class TestInteractionCRUD:
                 interaction_type=InteractionType.EMAIL,
                 interaction_date=datetime.now(),
                 subject=f"Email {i}",
-                content=f"Content {i}"
+                content=f"Content {i}",
             )
             test_session.add(interaction)
         test_session.commit()
@@ -214,7 +226,7 @@ class TestInteractionCRUD:
             interaction_type=InteractionType.EVENT,
             interaction_date=datetime.now(),
             subject="Trade show",
-            content="Met at booth"
+            content="Met at booth",
         )
         test_session.add(interaction)
         test_session.commit()
@@ -230,7 +242,7 @@ class TestInteractionCRUD:
             interaction_type=InteractionType.EMAIL,
             interaction_date=datetime.now(),
             subject="Test",
-            content="Test content"
+            content="Test content",
         )
         test_session.add(interaction)
         test_session.commit()
@@ -239,15 +251,18 @@ class TestInteractionCRUD:
         result = crud.delete_interaction(interaction_id)
         assert result is True
 
-        deleted = test_session.query(Interaction).filter(
-            Interaction.id == interaction_id
-        ).first()
+        deleted = (
+            test_session.query(Interaction)
+            .filter(Interaction.id == interaction_id)
+            .first()
+        )
         assert deleted is None
 
 
 # ============================================================================
 # OutreachDraft Tests
 # ============================================================================
+
 
 class TestOutreachDraftCRUD:
     """Test suite for OutreachDraft CRUD operations."""
@@ -258,7 +273,7 @@ class TestOutreachDraftCRUD:
             prospect_id=sample_prospect.id,
             draft_type="email",
             content="Draft email content",
-            status="draft"
+            status="draft",
         )
 
         result = crud.create_or_update_outreach_draft(draft)
@@ -270,7 +285,7 @@ class TestOutreachDraftCRUD:
             prospect_id=99999999,
             draft_type="email",
             content="Test content",
-            status="draft"
+            status="draft",
         )
 
         result = crud.create_or_update_outreach_draft(draft)
@@ -282,7 +297,7 @@ class TestOutreachDraftCRUD:
             prospect_id=sample_prospect.id,
             draft_type="linkedin",
             content="LinkedIn message",
-            status="draft"
+            status="draft",
         )
         test_session.add(draft)
         test_session.commit()
@@ -297,7 +312,7 @@ class TestOutreachDraftCRUD:
             prospect_id=sample_prospect.id,
             draft_type="email",
             content="Test content",
-            status="draft"
+            status="draft",
         )
         test_session.add(draft)
         test_session.commit()
@@ -314,7 +329,7 @@ class TestOutreachDraftCRUD:
                 prospect_id=sample_prospect.id,
                 draft_type="email",
                 content=f"Content {i}",
-                status="draft"
+                status="draft",
             )
             test_session.add(draft)
         test_session.commit()
@@ -328,7 +343,7 @@ class TestOutreachDraftCRUD:
             prospect_id=sample_prospect.id,
             draft_type="email",
             content="Sent content",
-            status="sent"
+            status="sent",
         )
         test_session.add(draft)
         test_session.commit()
@@ -343,7 +358,7 @@ class TestOutreachDraftCRUD:
             prospect_id=sample_prospect.id,
             draft_type="email",
             content="Test",
-            status="draft"
+            status="draft",
         )
         test_session.add(draft)
         test_session.commit()
@@ -352,15 +367,18 @@ class TestOutreachDraftCRUD:
         result = crud.delete_outreach_draft(draft_id)
         assert result is True
 
-        deleted = test_session.query(OutreachDraft).filter(
-            OutreachDraft.id == draft_id
-        ).first()
+        deleted = (
+            test_session.query(OutreachDraft)
+            .filter(OutreachDraft.id == draft_id)
+            .first()
+        )
         assert deleted is None
 
 
 # ============================================================================
 # Event Tests
 # ============================================================================
+
 
 class TestEventCRUD:
     """Test suite for Event CRUD operations."""
@@ -372,7 +390,7 @@ class TestEventCRUD:
             event_date=datetime(2025, 7, 1),
             description="AWS Webinar",
             location="Online",
-            status="scheduled"
+            status="scheduled",
         )
 
         result = crud.create_or_update_event(event)
@@ -397,7 +415,7 @@ class TestEventCRUD:
             event_date=datetime(2025, 8, 1),
             description="Hands-on workshop",
             location="Seattle, WA",
-            status="scheduled"
+            status="scheduled",
         )
         test_session.add(event)
         test_session.commit()
@@ -413,15 +431,14 @@ class TestEventCRUD:
         result = crud.delete_event(event_id)
         assert result is True
 
-        deleted = test_session.query(Event).filter(
-            Event.id == event_id
-        ).first()
+        deleted = test_session.query(Event).filter(Event.id == event_id).first()
         assert deleted is None
 
 
 # ============================================================================
 # LLMUsageLog Tests
 # ============================================================================
+
 
 class TestLLMUsageLog:
     """Test suite for LLMUsageLog logging functions."""
@@ -436,7 +453,7 @@ class TestLLMUsageLog:
             completion_tokens=200,
             total_tokens=700,
             latency_ms=1200,
-            cost=0.05
+            cost=0.05,
         )
 
         assert result is True
@@ -450,7 +467,7 @@ class TestLLMUsageLog:
         result = crud.log_llm_usage(
             workflow_name="outreach_generation",
             node_name="draft_email",
-            model="gpt-3.5-turbo"
+            model="gpt-3.5-turbo",
         )
 
         assert result is True
@@ -485,31 +502,41 @@ class TestLLMUsageLog:
         """Test getting aggregated usage statistics."""
         # Create test logs with known values
         crud.log_llm_usage(
-            "test_workflow", "node1", "gpt-4",
-            prompt_tokens=100, completion_tokens=50,
-            total_tokens=150, cost=0.01, latency_ms=1000
+            "test_workflow",
+            "node1",
+            "gpt-4",
+            prompt_tokens=100,
+            completion_tokens=50,
+            total_tokens=150,
+            cost=0.01,
+            latency_ms=1000,
         )
         crud.log_llm_usage(
-            "test_workflow", "node2", "gpt-4",
-            prompt_tokens=200, completion_tokens=100,
-            total_tokens=300, cost=0.02, latency_ms=1500
+            "test_workflow",
+            "node2",
+            "gpt-4",
+            prompt_tokens=200,
+            completion_tokens=100,
+            total_tokens=300,
+            cost=0.02,
+            latency_ms=1500,
         )
 
         stats = crud.get_llm_usage_stats(workflow_name="test_workflow")
 
-        assert stats['total_calls'] == 2
-        assert stats['total_prompt_tokens'] == 300
-        assert stats['total_completion_tokens'] == 150
-        assert stats['total_tokens'] == 450
-        assert stats['total_cost'] == 0.03
-        assert stats['avg_latency_ms'] == 1250.0
+        assert stats["total_calls"] == 2
+        assert stats["total_prompt_tokens"] == 300
+        assert stats["total_completion_tokens"] == 150
+        assert stats["total_tokens"] == 450
+        assert stats["total_cost"] == 0.03
+        assert stats["avg_latency_ms"] == 1250.0
 
     def test_get_llm_usage_stats_empty(self, test_session):
         """Test getting stats when no logs exist."""
         stats = crud.get_llm_usage_stats(workflow_name="nonexistent_workflow")
 
-        assert stats['total_calls'] == 0
-        assert stats['total_cost'] == 0.0
+        assert stats["total_calls"] == 0
+        assert stats["total_cost"] == 0.0
 
 
 if __name__ == "__main__":

@@ -11,16 +11,24 @@ import sys
 import os
 
 # Add app directory to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
+)
 
-from app.models.database import Base, ProspectResearch, Prospect, Company, Industry, ProspectStatus
+from app.models.database import (
+    Base,
+    ProspectResearch,
+    Prospect,
+    Company,
+    Industry,
+    ProspectStatus,
+)
 import app.services.db_crud as crud
 
 
 # Test database configuration
 TEST_DATABASE_URL = os.getenv(
-    "TEST_DATABASE_URL",
-    "postgresql://postgres:postgres@localhost:5432/sales_test"
+    "TEST_DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/sales_test"
 )
 
 
@@ -33,13 +41,17 @@ def test_db_engine():
     # Minimal cleanup
     with engine.connect() as conn:
         conn.execute(text("COMMIT"))
-        result = conn.execute(text("""
+        result = conn.execute(
+            text(
+                """
             SELECT tablename FROM pg_tables
             WHERE schemaname = 'public' AND tablename != 'alembic_version'
-        """))
+        """
+            )
+        )
         tables = [row[0] for row in result]
         if tables:
-            tables_str = ', '.join(tables)
+            tables_str = ", ".join(tables)
             conn.execute(text(f"TRUNCATE TABLE {tables_str} RESTART IDENTITY CASCADE"))
             conn.execute(text("COMMIT"))
     engine.dispose()
@@ -71,11 +83,7 @@ def sample_industry(test_session):
 @pytest.fixture(scope="function")
 def sample_company(test_session, sample_industry):
     """Create a sample company for testing."""
-    company = Company(
-        name="Test Corp",
-        industry_id=sample_industry.id,
-        size="100-500"
-    )
+    company = Company(name="Test Corp", industry_id=sample_industry.id, size="100-500")
     test_session.add(company)
     test_session.commit()
     test_session.refresh(company)
@@ -89,7 +97,7 @@ def sample_prospect(test_session, sample_company):
         full_name="John Doe",
         email="john@example.com",
         company_id=sample_company.id,
-        status=ProspectStatus.NEW
+        status=ProspectStatus.NEW,
     )
     test_session.add(prospect)
     test_session.commit()
@@ -105,7 +113,7 @@ def sample_research(test_session, sample_prospect):
         research_summary="Test research summary",
         key_insights=["insight1", "insight2"],
         recommended_solutions=[{"solution": "AWS EC2"}],
-        confidence_score=0.85
+        confidence_score=0.85,
     )
     test_session.add(research)
     test_session.commit()
@@ -116,8 +124,10 @@ def sample_research(test_session, sample_prospect):
 @pytest.fixture(autouse=True)
 def mock_session_local(monkeypatch, test_session):
     """Mock SessionLocal to return test session."""
+
     def mock_session_maker():
         return test_session
+
     monkeypatch.setattr(crud, "SessionLocal", mock_session_maker)
 
 
@@ -131,24 +141,25 @@ class TestCreateOrUpdateProspectResearch:
             prospect_id=sample_prospect.id,
             research_summary="New research findings",
             key_insights=["finding1", "finding2"],
-            confidence_score=0.9
+            confidence_score=0.9,
         )
 
         result = crud.create_or_update_prospect_research(new_research)
         assert result is True
 
         # Verify created
-        saved = test_session.query(ProspectResearch).filter(
-            ProspectResearch.research_summary == "New research findings"
-        ).first()
+        saved = (
+            test_session.query(ProspectResearch)
+            .filter(ProspectResearch.research_summary == "New research findings")
+            .first()
+        )
         assert saved is not None
         assert saved.confidence_score == 0.9
 
     def test_create_research_with_minimal_fields(self, test_session, sample_prospect):
         """Test creating research with only required fields."""
         minimal_research = ProspectResearch(
-            prospect_id=sample_prospect.id,
-            research_summary="Minimal research"
+            prospect_id=sample_prospect.id, research_summary="Minimal research"
         )
 
         result = crud.create_or_update_prospect_research(minimal_research)
@@ -157,8 +168,7 @@ class TestCreateOrUpdateProspectResearch:
     def test_create_research_with_invalid_prospect_fails(self, test_session):
         """Test that creating research with invalid prospect_id fails."""
         invalid_research = ProspectResearch(
-            prospect_id=99999999,
-            research_summary="Invalid research"
+            prospect_id=99999999, research_summary="Invalid research"
         )
 
         result = crud.create_or_update_prospect_research(invalid_research)
@@ -174,7 +184,9 @@ class TestGetAllProspectResearch:
         research_list = crud.get_all_prospect_research()
 
         assert isinstance(research_list, list)
-        our_research = next((r for r in research_list if r.id == sample_research.id), None)
+        our_research = next(
+            (r for r in research_list if r.id == sample_research.id), None
+        )
         assert our_research is not None
 
 
@@ -200,7 +212,9 @@ class TestGetProspectResearchById:
 class TestGetProspectResearchByProspectId:
     """Test suite for get_prospect_research_by_prospect_id function."""
 
-    def test_get_research_by_prospect_id(self, test_session, sample_prospect, sample_research):
+    def test_get_research_by_prospect_id(
+        self, test_session, sample_prospect, sample_research
+    ):
         """Test getting research by prospect ID."""
         prospect_id = sample_prospect.id
         research_list = crud.get_prospect_research_by_prospect_id(prospect_id)
@@ -220,8 +234,7 @@ class TestGetProspectResearchByProspectId:
         # Create multiple research records
         for i in range(3):
             research = ProspectResearch(
-                prospect_id=prospect_id,
-                research_summary=f"Research {i}"
+                prospect_id=prospect_id, research_summary=f"Research {i}"
             )
             test_session.add(research)
         test_session.commit()
@@ -242,9 +255,11 @@ class TestDeleteProspectResearch:
         assert result is True
 
         # Verify deleted
-        deleted = test_session.query(ProspectResearch).filter(
-            ProspectResearch.id == research_id
-        ).first()
+        deleted = (
+            test_session.query(ProspectResearch)
+            .filter(ProspectResearch.id == research_id)
+            .first()
+        )
         assert deleted is None
 
     def test_delete_nonexistent_research(self, test_session):
@@ -261,8 +276,7 @@ class TestProspectResearchIntegration:
         """Test complete CRUD flow."""
         # Create
         new_research = ProspectResearch(
-            prospect_id=sample_prospect.id,
-            research_summary="Integration test research"
+            prospect_id=sample_prospect.id, research_summary="Integration test research"
         )
         create_result = crud.create_or_update_prospect_research(new_research)
         assert create_result is True
@@ -270,9 +284,11 @@ class TestProspectResearchIntegration:
         test_session.commit()
 
         # Read
-        created = test_session.query(ProspectResearch).filter(
-            ProspectResearch.research_summary == "Integration test research"
-        ).first()
+        created = (
+            test_session.query(ProspectResearch)
+            .filter(ProspectResearch.research_summary == "Integration test research")
+            .first()
+        )
         assert created is not None
         created_id = created.id
 

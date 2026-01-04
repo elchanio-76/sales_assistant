@@ -16,6 +16,7 @@ settings = Settings()
 engine = create_engine(settings.DB_URL, pool_size=5, max_overflow=10)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+
 @contextmanager
 def get_db_session():
     """Context manager for database sessions."""
@@ -28,9 +29,11 @@ def get_db_session():
     finally:
         session.close()
 
+
 # ============================================================================
 # Prospect CRUD Operations
 # ============================================================================
+
 
 def create_or_update_prospect(prospect: db.Prospect) -> bool:
     """
@@ -53,8 +56,11 @@ def create_or_update_prospect(prospect: db.Prospect) -> bool:
 
             # Check if it's a foreign key violation
             # Foreign key violations cannot be fixed with merge
-            error_msg = str(e.orig) if hasattr(e, 'orig') else str(e)
-            if 'foreign key constraint' in error_msg.lower() or 'fkey' in error_msg.lower():
+            error_msg = str(e.orig) if hasattr(e, "orig") else str(e)
+            if (
+                "foreign key constraint" in error_msg.lower()
+                or "fkey" in error_msg.lower()
+            ):
                 logger.error(f"Foreign key constraint violation: {e}")
                 return False
 
@@ -75,6 +81,7 @@ def create_or_update_prospect(prospect: db.Prospect) -> bool:
 
     return result
 
+
 def get_all_prospects() -> list[db.Prospect]:
     """
     Retrieve all prospects from the database.
@@ -91,6 +98,7 @@ def get_all_prospects() -> list[db.Prospect]:
 
     return prospects
 
+
 def get_prospect_by_id(prospect_id: int) -> db.Prospect | None:
     """
     Retrieve a prospect by its ID.
@@ -105,11 +113,14 @@ def get_prospect_by_id(prospect_id: int) -> db.Prospect | None:
 
     with get_db_session() as session:
         try:
-            prospect = session.query(db.Prospect).filter(db.Prospect.id == prospect_id).first()
+            prospect = (
+                session.query(db.Prospect).filter(db.Prospect.id == prospect_id).first()
+            )
         except exc.SQLAlchemyError as e:
             logger.error(f"Error fetching prospect: {e}")
 
     return prospect
+
 
 def get_prospect_by_name(name: str, limit: int | None = None) -> list[db.Prospect]:
     """
@@ -127,13 +138,23 @@ def get_prospect_by_name(name: str, limit: int | None = None) -> list[db.Prospec
     with get_db_session() as session:
         try:
             if limit is not None:
-                prospects = session.query(db.Prospect).filter(db.Prospect.full_name == name).limit(limit).all()
+                prospects = (
+                    session.query(db.Prospect)
+                    .filter(db.Prospect.full_name == name)
+                    .limit(limit)
+                    .all()
+                )
             else:
-                prospects = session.query(db.Prospect).filter(db.Prospect.full_name == name).all()
+                prospects = (
+                    session.query(db.Prospect)
+                    .filter(db.Prospect.full_name == name)
+                    .all()
+                )
         except exc.SQLAlchemyError as e:
             logger.error(f"Error fetching prospect: {e}")
 
     return prospects
+
 
 def delete_prospect(prospect_id: int) -> bool:
     """
@@ -148,14 +169,18 @@ def delete_prospect(prospect_id: int) -> bool:
     result = False
     with get_db_session() as session:
         try:
-            prospect = session.query(db.Prospect).filter(db.Prospect.id == prospect_id).first()
+            prospect = (
+                session.query(db.Prospect).filter(db.Prospect.id == prospect_id).first()
+            )
             if prospect:
                 logger.info(f"Deleting prospect with id {prospect_id}")
                 session.delete(prospect)
                 session.commit()
                 result = True
             else:
-                logger.warning(f"Prospect with id {prospect_id} not found when deleting.")
+                logger.warning(
+                    f"Prospect with id {prospect_id} not found when deleting."
+                )
 
         except exc.SQLAlchemyError as e:
             logger.error(f"Error deleting prospect: {e}")
@@ -167,6 +192,7 @@ def delete_prospect(prospect_id: int) -> bool:
 # ============================================================================
 # Company CRUD Operations
 # ============================================================================
+
 
 def create_or_update_company(company: db.Company) -> bool:
     """
@@ -188,8 +214,11 @@ def create_or_update_company(company: db.Company) -> bool:
             session.rollback()
 
             # Check if it's a foreign key violation
-            error_msg = str(e.orig) if hasattr(e, 'orig') else str(e)
-            if 'foreign key constraint' in error_msg.lower() or 'fkey' in error_msg.lower():
+            error_msg = str(e.orig) if hasattr(e, "orig") else str(e)
+            if (
+                "foreign key constraint" in error_msg.lower()
+                or "fkey" in error_msg.lower()
+            ):
                 logger.error(f"Foreign key constraint violation: {e}")
                 return False
 
@@ -239,9 +268,9 @@ def get_company_by_id(company_id: int) -> db.Company | None:
     """
     with get_db_session() as session:
         try:
-            company = session.query(db.Company).filter(
-                db.Company.id == company_id
-            ).first()
+            company = (
+                session.query(db.Company).filter(db.Company.id == company_id).first()
+            )
             return company
         except exc.SQLAlchemyError as e:
             logger.error(f"Error fetching company: {e}")
@@ -284,7 +313,9 @@ def delete_company(company_id: int) -> bool:
     result = False
     with get_db_session() as session:
         try:
-            company = session.query(db.Company).filter(db.Company.id == company_id).first()
+            company = (
+                session.query(db.Company).filter(db.Company.id == company_id).first()
+            )
             if company:
                 logger.info(f"Deleting company with id {company_id}")
                 session.delete(company)
@@ -303,6 +334,7 @@ def delete_company(company_id: int) -> bool:
 # ============================================================================
 # Solution (AWSolution) CRUD Operations
 # ============================================================================
+
 
 def create_or_update_solution(solution: db.Solution) -> bool:
     """
@@ -369,9 +401,9 @@ def get_solution_by_id(solution_id: int) -> db.Solution | None:
     """
     with get_db_session() as session:
         try:
-            solution = session.query(db.Solution).filter(
-                db.Solution.id == solution_id
-            ).first()
+            solution = (
+                session.query(db.Solution).filter(db.Solution.id == solution_id).first()
+            )
             return solution
         except exc.SQLAlchemyError as e:
             logger.error(f"Error fetching solution: {e}")
@@ -413,9 +445,11 @@ def get_solutions_by_category(category: str) -> list[db.Solution]:
     """
     with get_db_session() as session:
         try:
-            solutions = session.query(db.Solution).filter(
-                db.Solution.category == category
-            ).all()
+            solutions = (
+                session.query(db.Solution)
+                .filter(db.Solution.category == category)
+                .all()
+            )
             return solutions
         except exc.SQLAlchemyError as e:
             logger.error(f"Error fetching solutions by category: {e}")
@@ -435,14 +469,18 @@ def delete_solution(solution_id: int) -> bool:
     result = False
     with get_db_session() as session:
         try:
-            solution = session.query(db.Solution).filter(db.Solution.id == solution_id).first()
+            solution = (
+                session.query(db.Solution).filter(db.Solution.id == solution_id).first()
+            )
             if solution:
                 logger.info(f"Deleting solution with id {solution_id}")
                 session.delete(solution)
                 session.commit()
                 result = True
             else:
-                logger.warning(f"Solution with id {solution_id} not found when deleting.")
+                logger.warning(
+                    f"Solution with id {solution_id} not found when deleting."
+                )
 
         except exc.SQLAlchemyError as e:
             logger.error(f"Error deleting solution: {e}")
@@ -454,6 +492,7 @@ def delete_solution(solution_id: int) -> bool:
 # ============================================================================
 # ProspectResearch CRUD Operations
 # ============================================================================
+
 
 def create_or_update_prospect_research(research: db.ProspectResearch) -> bool:
     """
@@ -475,8 +514,11 @@ def create_or_update_prospect_research(research: db.ProspectResearch) -> bool:
             session.rollback()
 
             # Check if it's a foreign key violation
-            error_msg = str(e.orig) if hasattr(e, 'orig') else str(e)
-            if 'foreign key constraint' in error_msg.lower() or 'fkey' in error_msg.lower():
+            error_msg = str(e.orig) if hasattr(e, "orig") else str(e)
+            if (
+                "foreign key constraint" in error_msg.lower()
+                or "fkey" in error_msg.lower()
+            ):
                 logger.error(f"Foreign key constraint violation: {e}")
                 return False
 
@@ -526,9 +568,11 @@ def get_prospect_research_by_id(research_id: int) -> db.ProspectResearch | None:
     """
     with get_db_session() as session:
         try:
-            research = session.query(db.ProspectResearch).filter(
-                db.ProspectResearch.id == research_id
-            ).first()
+            research = (
+                session.query(db.ProspectResearch)
+                .filter(db.ProspectResearch.id == research_id)
+                .first()
+            )
             return research
         except exc.SQLAlchemyError as e:
             logger.error(f"Error fetching prospect research: {e}")
@@ -547,9 +591,11 @@ def get_prospect_research_by_prospect_id(prospect_id: int) -> list[db.ProspectRe
     """
     with get_db_session() as session:
         try:
-            research = session.query(db.ProspectResearch).filter(
-                db.ProspectResearch.prospect_id == prospect_id
-            ).all()
+            research = (
+                session.query(db.ProspectResearch)
+                .filter(db.ProspectResearch.prospect_id == prospect_id)
+                .all()
+            )
             return research
         except exc.SQLAlchemyError as e:
             logger.error(f"Error fetching prospect research by prospect_id: {e}")
@@ -569,16 +615,20 @@ def delete_prospect_research(research_id: int) -> bool:
     result = False
     with get_db_session() as session:
         try:
-            research = session.query(db.ProspectResearch).filter(
-                db.ProspectResearch.id == research_id
-            ).first()
+            research = (
+                session.query(db.ProspectResearch)
+                .filter(db.ProspectResearch.id == research_id)
+                .first()
+            )
             if research:
                 logger.info(f"Deleting prospect research with id {research_id}")
                 session.delete(research)
                 session.commit()
                 result = True
             else:
-                logger.warning(f"Prospect research with id {research_id} not found when deleting.")
+                logger.warning(
+                    f"Prospect research with id {research_id} not found when deleting."
+                )
 
         except exc.SQLAlchemyError as e:
             logger.error(f"Error deleting prospect research: {e}")
@@ -590,6 +640,7 @@ def delete_prospect_research(research_id: int) -> bool:
 # ============================================================================
 # Interaction CRUD Operations
 # ============================================================================
+
 
 def create_or_update_interaction(interaction: db.Interaction) -> bool:
     """
@@ -611,8 +662,11 @@ def create_or_update_interaction(interaction: db.Interaction) -> bool:
             session.rollback()
 
             # Check if it's a foreign key violation
-            error_msg = str(e.orig) if hasattr(e, 'orig') else str(e)
-            if 'foreign key constraint' in error_msg.lower() or 'fkey' in error_msg.lower():
+            error_msg = str(e.orig) if hasattr(e, "orig") else str(e)
+            if (
+                "foreign key constraint" in error_msg.lower()
+                or "fkey" in error_msg.lower()
+            ):
                 logger.error(f"Foreign key constraint violation: {e}")
                 return False
 
@@ -662,9 +716,11 @@ def get_interaction_by_id(interaction_id: int) -> db.Interaction | None:
     """
     with get_db_session() as session:
         try:
-            interaction = session.query(db.Interaction).filter(
-                db.Interaction.id == interaction_id
-            ).first()
+            interaction = (
+                session.query(db.Interaction)
+                .filter(db.Interaction.id == interaction_id)
+                .first()
+            )
             return interaction
         except exc.SQLAlchemyError as e:
             logger.error(f"Error fetching interaction: {e}")
@@ -683,16 +739,20 @@ def get_interactions_by_prospect_id(prospect_id: int) -> list[db.Interaction]:
     """
     with get_db_session() as session:
         try:
-            interactions = session.query(db.Interaction).filter(
-                db.Interaction.prospect_id == prospect_id
-            ).all()
+            interactions = (
+                session.query(db.Interaction)
+                .filter(db.Interaction.prospect_id == prospect_id)
+                .all()
+            )
             return interactions
         except exc.SQLAlchemyError as e:
             logger.error(f"Error fetching interactions by prospect_id: {e}")
             return []
 
 
-def get_interactions_by_type(interaction_type: db.InteractionType) -> list[db.Interaction]:
+def get_interactions_by_type(
+    interaction_type: db.InteractionType,
+) -> list[db.Interaction]:
     """
     Retrieve interactions by type.
 
@@ -704,9 +764,11 @@ def get_interactions_by_type(interaction_type: db.InteractionType) -> list[db.In
     """
     with get_db_session() as session:
         try:
-            interactions = session.query(db.Interaction).filter(
-                db.Interaction.interaction_type == interaction_type
-            ).all()
+            interactions = (
+                session.query(db.Interaction)
+                .filter(db.Interaction.interaction_type == interaction_type)
+                .all()
+            )
             return interactions
         except exc.SQLAlchemyError as e:
             logger.error(f"Error fetching interactions by type: {e}")
@@ -726,16 +788,20 @@ def delete_interaction(interaction_id: int) -> bool:
     result = False
     with get_db_session() as session:
         try:
-            interaction = session.query(db.Interaction).filter(
-                db.Interaction.id == interaction_id
-            ).first()
+            interaction = (
+                session.query(db.Interaction)
+                .filter(db.Interaction.id == interaction_id)
+                .first()
+            )
             if interaction:
                 logger.info(f"Deleting interaction with id {interaction_id}")
                 session.delete(interaction)
                 session.commit()
                 result = True
             else:
-                logger.warning(f"Interaction with id {interaction_id} not found when deleting.")
+                logger.warning(
+                    f"Interaction with id {interaction_id} not found when deleting."
+                )
 
         except exc.SQLAlchemyError as e:
             logger.error(f"Error deleting interaction: {e}")
@@ -747,6 +813,7 @@ def delete_interaction(interaction_id: int) -> bool:
 # ============================================================================
 # OutreachDraft CRUD Operations
 # ============================================================================
+
 
 def create_or_update_outreach_draft(draft: db.OutreachDraft) -> bool:
     """
@@ -768,8 +835,11 @@ def create_or_update_outreach_draft(draft: db.OutreachDraft) -> bool:
             session.rollback()
 
             # Check if it's a foreign key violation
-            error_msg = str(e.orig) if hasattr(e, 'orig') else str(e)
-            if 'foreign key constraint' in error_msg.lower() or 'fkey' in error_msg.lower():
+            error_msg = str(e.orig) if hasattr(e, "orig") else str(e)
+            if (
+                "foreign key constraint" in error_msg.lower()
+                or "fkey" in error_msg.lower()
+            ):
                 logger.error(f"Foreign key constraint violation: {e}")
                 return False
 
@@ -819,9 +889,11 @@ def get_outreach_draft_by_id(draft_id: int) -> db.OutreachDraft | None:
     """
     with get_db_session() as session:
         try:
-            draft = session.query(db.OutreachDraft).filter(
-                db.OutreachDraft.id == draft_id
-            ).first()
+            draft = (
+                session.query(db.OutreachDraft)
+                .filter(db.OutreachDraft.id == draft_id)
+                .first()
+            )
             return draft
         except exc.SQLAlchemyError as e:
             logger.error(f"Error fetching outreach draft: {e}")
@@ -840,9 +912,11 @@ def get_outreach_drafts_by_prospect_id(prospect_id: int) -> list[db.OutreachDraf
     """
     with get_db_session() as session:
         try:
-            drafts = session.query(db.OutreachDraft).filter(
-                db.OutreachDraft.prospect_id == prospect_id
-            ).all()
+            drafts = (
+                session.query(db.OutreachDraft)
+                .filter(db.OutreachDraft.prospect_id == prospect_id)
+                .all()
+            )
             return drafts
         except exc.SQLAlchemyError as e:
             logger.error(f"Error fetching outreach drafts by prospect_id: {e}")
@@ -861,9 +935,11 @@ def get_outreach_drafts_by_status(status: str) -> list[db.OutreachDraft]:
     """
     with get_db_session() as session:
         try:
-            drafts = session.query(db.OutreachDraft).filter(
-                db.OutreachDraft.status == status
-            ).all()
+            drafts = (
+                session.query(db.OutreachDraft)
+                .filter(db.OutreachDraft.status == status)
+                .all()
+            )
             return drafts
         except exc.SQLAlchemyError as e:
             logger.error(f"Error fetching outreach drafts by status: {e}")
@@ -883,16 +959,20 @@ def delete_outreach_draft(draft_id: int) -> bool:
     result = False
     with get_db_session() as session:
         try:
-            draft = session.query(db.OutreachDraft).filter(
-                db.OutreachDraft.id == draft_id
-            ).first()
+            draft = (
+                session.query(db.OutreachDraft)
+                .filter(db.OutreachDraft.id == draft_id)
+                .first()
+            )
             if draft:
                 logger.info(f"Deleting outreach draft with id {draft_id}")
                 session.delete(draft)
                 session.commit()
                 result = True
             else:
-                logger.warning(f"Outreach draft with id {draft_id} not found when deleting.")
+                logger.warning(
+                    f"Outreach draft with id {draft_id} not found when deleting."
+                )
 
         except exc.SQLAlchemyError as e:
             logger.error(f"Error deleting outreach draft: {e}")
@@ -904,6 +984,7 @@ def delete_outreach_draft(draft_id: int) -> bool:
 # ============================================================================
 # Event CRUD Operations
 # ============================================================================
+
 
 def create_or_update_event(event: db.Event) -> bool:
     """
@@ -970,9 +1051,7 @@ def get_event_by_id(event_id: int) -> db.Event | None:
     """
     with get_db_session() as session:
         try:
-            event = session.query(db.Event).filter(
-                db.Event.id == event_id
-            ).first()
+            event = session.query(db.Event).filter(db.Event.id == event_id).first()
             return event
         except exc.SQLAlchemyError as e:
             logger.error(f"Error fetching event: {e}")
@@ -991,9 +1070,9 @@ def get_events_by_type(event_type: str) -> list[db.Event]:
     """
     with get_db_session() as session:
         try:
-            events = session.query(db.Event).filter(
-                db.Event.event_type == event_type
-            ).all()
+            events = (
+                session.query(db.Event).filter(db.Event.event_type == event_type).all()
+            )
             return events
         except exc.SQLAlchemyError as e:
             logger.error(f"Error fetching events by type: {e}")
@@ -1033,6 +1112,7 @@ def delete_event(event_id: int) -> bool:
 # LLMUsageLog Logging Functions
 # ============================================================================
 
+
 def log_llm_usage(
     workflow_name: str,
     node_name: str,
@@ -1041,7 +1121,7 @@ def log_llm_usage(
     completion_tokens: int = 0,
     total_tokens: int = 0,
     latency_ms: int = 0,
-    cost: float = 0.0
+    cost: float = 0.0,
 ) -> bool:
     """
     Log LLM usage to the database.
@@ -1071,7 +1151,7 @@ def log_llm_usage(
                 completion_tokens=completion_tokens,
                 total_tokens=total_tokens,
                 latency_ms=latency_ms,
-                cost=cost
+                cost=cost,
             )
             session.add(log_entry)
             session.commit()
@@ -1086,9 +1166,7 @@ def log_llm_usage(
 
 
 def get_llm_usage_logs(
-    workflow_name: str | None = None,
-    model: str | None = None,
-    limit: int | None = None
+    workflow_name: str | None = None, model: str | None = None, limit: int | None = None
 ) -> list[db.LLMUsageLog]:
     """
     Retrieve LLM usage logs with optional filtering.
@@ -1138,12 +1216,14 @@ def get_llm_usage_stats(workflow_name: str | None = None) -> dict:
         try:
             # Note: Database has typo "worfklow_name" instead of "workflow_name"
             query = session.query(
-                func.count(db.LLMUsageLog.id).label('total_calls'),
-                func.sum(db.LLMUsageLog.prompt_tokens).label('total_prompt_tokens'),
-                func.sum(db.LLMUsageLog.completion_tokens).label('total_completion_tokens'),
-                func.sum(db.LLMUsageLog.total_tokens).label('total_tokens'),
-                func.sum(db.LLMUsageLog.cost).label('total_cost'),
-                func.avg(db.LLMUsageLog.latency_ms).label('avg_latency_ms')
+                func.count(db.LLMUsageLog.id).label("total_calls"),
+                func.sum(db.LLMUsageLog.prompt_tokens).label("total_prompt_tokens"),
+                func.sum(db.LLMUsageLog.completion_tokens).label(
+                    "total_completion_tokens"
+                ),
+                func.sum(db.LLMUsageLog.total_tokens).label("total_tokens"),
+                func.sum(db.LLMUsageLog.cost).label("total_cost"),
+                func.avg(db.LLMUsageLog.latency_ms).label("avg_latency_ms"),
             )
 
             if workflow_name is not None:
@@ -1152,20 +1232,20 @@ def get_llm_usage_stats(workflow_name: str | None = None) -> dict:
             result = query.first()
 
             return {
-                'total_calls': result.total_calls or 0,
-                'total_prompt_tokens': result.total_prompt_tokens or 0,
-                'total_completion_tokens': result.total_completion_tokens or 0,
-                'total_tokens': result.total_tokens or 0,
-                'total_cost': float(result.total_cost or 0.0),
-                'avg_latency_ms': float(result.avg_latency_ms or 0.0)
+                "total_calls": result.total_calls or 0,
+                "total_prompt_tokens": result.total_prompt_tokens or 0,
+                "total_completion_tokens": result.total_completion_tokens or 0,
+                "total_tokens": result.total_tokens or 0,
+                "total_cost": float(result.total_cost or 0.0),
+                "avg_latency_ms": float(result.avg_latency_ms or 0.0),
             }
         except exc.SQLAlchemyError as e:
             logger.error(f"Error fetching LLM usage stats: {e}")
             return {
-                'total_calls': 0,
-                'total_prompt_tokens': 0,
-                'total_completion_tokens': 0,
-                'total_tokens': 0,
-                'total_cost': 0.0,
-                'avg_latency_ms': 0.0
+                "total_calls": 0,
+                "total_prompt_tokens": 0,
+                "total_completion_tokens": 0,
+                "total_tokens": 0,
+                "total_cost": 0.0,
+                "avg_latency_ms": 0.0,
             }

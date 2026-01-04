@@ -12,7 +12,9 @@ import sys
 import os
 
 # Add app directory to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
+)
 
 from app.models.database import Base, Solution, PricingModels
 import app.services.db_crud as crud
@@ -20,8 +22,7 @@ import app.services.db_crud as crud
 
 # Test database configuration
 TEST_DATABASE_URL = os.getenv(
-    "TEST_DATABASE_URL",
-    "postgresql://postgres:postgres@localhost:5432/sales_test"
+    "TEST_DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/sales_test"
 )
 
 
@@ -45,18 +46,22 @@ def test_db_engine():
         conn.execute(text("COMMIT"))  # End any open transaction
 
         # Get all table names except alembic_version
-        result = conn.execute(text("""
+        result = conn.execute(
+            text(
+                """
             SELECT tablename
             FROM pg_tables
             WHERE schemaname = 'public'
             AND tablename != 'alembic_version'
-        """))
+        """
+            )
+        )
 
         tables = [row[0] for row in result]
 
         if tables:
             # Truncate all tables (CASCADE handles foreign keys)
-            tables_str = ', '.join(tables)
+            tables_str = ", ".join(tables)
             conn.execute(text(f"TRUNCATE TABLE {tables_str} RESTART IDENTITY CASCADE"))
             conn.execute(text("COMMIT"))
 
@@ -92,7 +97,7 @@ def sample_solution(test_session):
         description="Scalable virtual servers in the cloud",
         use_cases={"web_hosting": True, "batch_processing": True},
         keywords=["compute", "vm", "server"],
-        pricing_model=PricingModels.ON_DEMAND
+        pricing_model=PricingModels.ON_DEMAND,
     )
     test_session.add(solution)
     test_session.commit()
@@ -109,6 +114,7 @@ def mock_session_local(monkeypatch, test_session):
     This ensures CRUD operations use the test transaction,
     which gets rolled back after each test.
     """
+
     def mock_session_maker():
         return test_session
 
@@ -127,7 +133,7 @@ class TestCreateOrUpdateSolution:
             description="Object storage built to retrieve any amount of data",
             use_cases={"backup": True, "data_lake": True},
             keywords=["storage", "object", "bucket"],
-            pricing_model=PricingModels.ON_DEMAND
+            pricing_model=PricingModels.ON_DEMAND,
         )
 
         result = crud.create_or_update_solution(new_solution)
@@ -135,9 +141,9 @@ class TestCreateOrUpdateSolution:
         assert result is True
 
         # Verify solution was created
-        saved_solution = test_session.query(Solution).filter(
-            Solution.name == "Amazon S3"
-        ).first()
+        saved_solution = (
+            test_session.query(Solution).filter(Solution.name == "Amazon S3").first()
+        )
         assert saved_solution is not None
         assert saved_solution.name == "Amazon S3"
         assert saved_solution.category == "Storage"
@@ -149,15 +155,15 @@ class TestCreateOrUpdateSolution:
             name="AWS Lambda",
             category="Compute",
             description="Serverless compute service",
-            pricing_model=PricingModels.ON_DEMAND
+            pricing_model=PricingModels.ON_DEMAND,
         )
 
         result = crud.create_or_update_solution(minimal_solution)
 
         assert result is True
-        saved = test_session.query(Solution).filter(
-            Solution.name == "AWS Lambda"
-        ).first()
+        saved = (
+            test_session.query(Solution).filter(Solution.name == "AWS Lambda").first()
+        )
         assert saved is not None
         assert saved.name == "AWS Lambda"
         assert saved.use_cases is None
@@ -168,7 +174,7 @@ class TestCreateOrUpdateSolution:
         pricing_models = [
             PricingModels.SAVINGS_PLANS,
             PricingModels.RESERVED_INSTANCES,
-            PricingModels.SUBSCRIPTION
+            PricingModels.SUBSCRIPTION,
         ]
 
         for idx, pricing_model in enumerate(pricing_models):
@@ -176,15 +182,17 @@ class TestCreateOrUpdateSolution:
                 name=f"Test Solution {idx}",
                 category="Test",
                 description=f"Test solution with {pricing_model.value} pricing",
-                pricing_model=pricing_model
+                pricing_model=pricing_model,
             )
             result = crud.create_or_update_solution(solution)
             assert result is True
 
         # Verify all were created
-        solutions = test_session.query(Solution).filter(
-            Solution.name.like("Test Solution%")
-        ).all()
+        solutions = (
+            test_session.query(Solution)
+            .filter(Solution.name.like("Test Solution%"))
+            .all()
+        )
         assert len(solutions) == 3
 
 
@@ -223,7 +231,7 @@ class TestGetAllSolutions:
                 name=data["name"],
                 category=data["category"],
                 description=f"Description for {data['name']}",
-                pricing_model=PricingModels.ON_DEMAND
+                pricing_model=PricingModels.ON_DEMAND,
             )
             test_session.add(solution)
         test_session.commit()
@@ -284,7 +292,7 @@ class TestGetSolutionByName:
                 name="Common Solution",
                 category="Test",
                 description=f"Description {i}",
-                pricing_model=PricingModels.ON_DEMAND
+                pricing_model=PricingModels.ON_DEMAND,
             )
             test_session.add(solution)
         test_session.commit()
@@ -302,7 +310,7 @@ class TestGetSolutionByName:
                 name="Same Name Solution",
                 category="Test",
                 description=f"Description {i}",
-                pricing_model=PricingModels.ON_DEMAND
+                pricing_model=PricingModels.ON_DEMAND,
             )
             test_session.add(solution)
         test_session.commit()
@@ -333,7 +341,7 @@ class TestGetSolutionsByCategory:
                 name=f"Database Solution {i}",
                 category="Database",
                 description=f"Database solution {i}",
-                pricing_model=PricingModels.ON_DEMAND
+                pricing_model=PricingModels.ON_DEMAND,
             )
             test_session.add(solution)
         test_session.commit()
@@ -363,9 +371,9 @@ class TestDeleteSolution:
         assert result is True
 
         # Verify solution was deleted
-        deleted = test_session.query(Solution).filter(
-            Solution.id == solution_id
-        ).first()
+        deleted = (
+            test_session.query(Solution).filter(Solution.id == solution_id).first()
+        )
         assert deleted is None
 
     def test_delete_nonexistent_solution(self, test_session):
@@ -401,7 +409,7 @@ class TestSolutionCRUDIntegration:
             name="Integration Test Solution",
             category="Integration",
             description="Testing integration",
-            pricing_model=PricingModels.ON_DEMAND
+            pricing_model=PricingModels.ON_DEMAND,
         )
         create_result = crud.create_or_update_solution(new_solution)
         assert create_result is True
@@ -409,9 +417,11 @@ class TestSolutionCRUDIntegration:
         test_session.commit()
 
         # Get the ID of created solution
-        created = test_session.query(Solution).filter(
-            Solution.name == "Integration Test Solution"
-        ).first()
+        created = (
+            test_session.query(Solution)
+            .filter(Solution.name == "Integration Test Solution")
+            .first()
+        )
         assert created is not None
         created_id = created.id
 
@@ -439,7 +449,7 @@ class TestSolutionCRUDIntegration:
                 name=f"{category} Test Solution",
                 category=category,
                 description=f"Test solution for {category}",
-                pricing_model=PricingModels.ON_DEMAND
+                pricing_model=PricingModels.ON_DEMAND,
             )
             result = crud.create_or_update_solution(solution)
             assert result is True

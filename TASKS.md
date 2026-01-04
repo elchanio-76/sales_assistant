@@ -86,26 +86,30 @@
 
 ## Task 3: Vector Store Infrastructure
 
-### 3.1 Qdrant Initialization
-- [ ] Create scripts/init_qdrant.py
-- [ ] Implement collection creation for aws_solutions (dimension=384, cosine)
-- [ ] Implement collection creation for reference_architectures
-- [ ] Implement collection creation for past_communications
-- [ ] Add error handling for existing collections
-- [ ] Test script execution against local Qdrant
-- [ ] Document Qdrant setup in README
+### 3.1 pgvector Initialization
+
+- [ ] Create scripts/init_pgvector.py
+- [x] Enable pgvector extension in PostgreSQL
+- [ ] Create aws_solution_vectors table (dimension=384, ivfflat index)
+- [ ] Create reference_architecture_vectors table
+- [ ] Create communication_vectors table
+- [ ] Add error handling for existing tables
+- [ ] Test script execution against local PostgreSQL
+- [ ] Document pgvector setup in README
 
 ### 3.2 Vector Service - Basic Operations
+
 - [ ] Create app/services/vector_service.py
 - [ ] Implement embedding generation using sentence-transformers (all-MiniLM-L6-v2)
-- [ ] Implement vector upsert for aws_solutions collection
-- [ ] Implement vector upsert for reference_architectures collection
-- [ ] Implement vector upsert for past_communications collection
-- [ ] Add connection pooling/management
+- [ ] Implement vector insert for aws_solution_vectors table
+- [ ] Implement vector insert for reference_architecture_vectors table
+- [ ] Implement vector insert for communication_vectors table
+- [ ] Add database session management
 - [ ] Test embedding generation (dimension check)
 - [ ] Write unit tests (tests/unit/services/test_vector_service.py)
 
 ### 3.3 Vector Service - Search Operations
+
 - [ ] Implement search_solutions() with filters (industry, keywords)
 - [ ] Implement search_reference_architectures()
 - [ ] Implement search_past_communications()
@@ -120,6 +124,7 @@
 ## Task 4: Seed Data Generation
 
 ### 4.1 AWS Solutions Seed Data
+
 - [ ] Create data/seeds/aws_solutions.csv template
 - [ ] Generate 30-50 AWS solution entries (use LLM or manual)
 - [ ] Include fields: name, category, description, use_cases, industries, keywords, pricing_model
@@ -130,15 +135,17 @@
 - [ ] Verify data in PostgreSQL
 
 ### 4.2 Vector Population for AWS Solutions
+
 - [ ] Create scripts/populate_vectors.py
 - [ ] Load AWS solutions from PostgreSQL
 - [ ] Generate embeddings for each solution
-- [ ] Upsert to Qdrant aws_solutions collection
+- [ ] Insert into aws_solution_vectors table
 - [ ] Add progress logging
 - [ ] Test script execution
-- [ ] Verify vectors in Qdrant (count, sample search)
+- [ ] Verify vectors in PostgreSQL (count, sample search using pgvector)
 
 ### 4.3 Test Prospects Seed Data
+
 - [ ] Create data/seeds/test_prospects.csv
 - [ ] Generate 10-15 realistic prospect entries
 - [ ] Include: linkedin_url, full_name, title, company_name, industry, location
@@ -150,6 +157,7 @@
 ## Task 5: API Foundation
 
 ### 5.1 Pydantic API Models
+
 - [ ] Create app/models/api.py
 - [ ] Implement ProspectCreate schema
 - [ ] Implement ProspectUpdate schema
@@ -162,6 +170,7 @@
 - [ ] Test schema validation with valid/invalid data
 
 ### 5.2 FastAPI Application Setup
+
 - [ ] Create app/main.py with FastAPI app instance
 - [ ] Configure CORS middleware
 - [ ] Add request logging middleware
@@ -171,6 +180,7 @@
 - [ ] Test /health endpoint returns 200
 
 ### 5.3 API Routes - Prospects
+
 - [ ] Create app/api/routes.py
 - [ ] Implement POST /api/v1/prospects
 - [ ] Implement GET /api/v1/prospects (with pagination)
@@ -181,6 +191,7 @@
 - [ ] Test all endpoints with curl
 
 ### 5.4 API Routes - CSV Import
+
 - [ ] Implement GET /api/v1/prospects/import/template
 - [ ] Implement POST /api/v1/prospects/import/csv
 - [ ] Add CSV parsing with validation
@@ -194,6 +205,7 @@
 ## Task 6: Solution Matching - Tier 1 (Vector Only)
 
 ### 6.1 Solution Matcher Service Setup
+
 - [ ] Create app/services/solution_matcher.py
 - [ ] Implement SolutionMatcher class
 - [ ] Add dependency injection for vector_service and database
@@ -201,6 +213,7 @@
 - [ ] Test context building with sample data
 
 ### 6.2 Tier 1 Vector Search Implementation
+
 - [ ] Implement search_aws_solutions() using vector_service
 - [ ] Add industry filtering
 - [ ] Add keyword filtering
@@ -211,6 +224,7 @@
 - [ ] Write unit tests (tests/unit/services/test_solution_matcher.py)
 
 ### 6.3 Solution Matcher Integration
+
 - [ ] Implement match_solutions_for_prospect() orchestration method
 - [ ] Combine aws_solutions + reference_architectures + past_communications
 - [ ] Format response according to spec
@@ -223,6 +237,7 @@
 ## Task 7: AWS MCP Service (Tier 2)
 
 ### 7.1 MCP Service Setup
+
 - [ ] Create app/services/aws_mcp_service.py
 - [ ] Implement MCPService class
 - [ ] Add configuration for MCP server URLs
@@ -231,6 +246,7 @@
 - [ ] Test connection to MCP servers (or mock if unavailable)
 
 ### 7.2 MCP Enrichment Implementation
+
 - [ ] Implement enrich_solution() for single solution
 - [ ] Query MCP for latest documentation
 - [ ] Query MCP for pricing information
@@ -239,6 +255,7 @@
 - [ ] Test with mock MCP responses
 
 ### 7.3 MCP Batch Processing and Caching
+
 - [ ] Implement enrich_solutions() for batch (top 5)
 - [ ] Add in-memory cache (TTL: 24 hours)
 - [ ] Implement cache key generation (solution_name:usage_pattern_hash)
@@ -248,6 +265,7 @@
 - [ ] Write unit tests
 
 ### 7.4 Two-Tier Integration
+
 - [ ] Update SolutionMatcher to use MCPService
 - [ ] Implement degradation flag (mcp_unavailable: true)
 - [ ] Add logging for tier switching
@@ -259,6 +277,7 @@
 ## Task 8: LangGraph - Research Workflow
 
 ### 8.1 Research Workflow State and Graph Setup
+
 - [ ] Create app/agents/research_workflow.py
 - [ ] Define ResearchState TypedDict per spec 5.1
 - [ ] Create StateGraph instance
@@ -268,6 +287,7 @@
 - [ ] Test graph compilation
 
 ### 8.2 Node: gather_context
+
 - [ ] Implement gather_context node
 - [ ] Load prospect from database
 - [ ] Load company from database (or create if missing)
@@ -277,6 +297,7 @@
 - [ ] Add error handling for missing prospect
 
 ### 8.3 Node: research_company (Placeholder)
+
 - [ ] Implement research_company node (placeholder: return mock data)
 - [ ] Define input/output contract
 - [ ] Add state update logic
@@ -284,18 +305,21 @@
 - [ ] Add logging
 
 ### 8.4 Node: analyze_tech_stack (Placeholder)
+
 - [ ] Implement analyze_tech_stack node (placeholder)
 - [ ] Define expected tech_stack_analysis structure
 - [ ] Update state
 - [ ] Test node
 
 ### 8.5 Node: identify_pain_points (Placeholder)
+
 - [ ] Implement identify_pain_points node (placeholder)
 - [ ] Define pain_points list structure
 - [ ] Update state
 - [ ] Test node
 
 ### 8.6 Node: match_solutions
+
 - [ ] Implement match_solutions node
 - [ ] Call SolutionMatcher.match_solutions_for_prospect()
 - [ ] Update state with recommended_solutions and reference_architectures
@@ -303,6 +327,7 @@
 - [ ] Add error handling
 
 ### 8.7 Node: synthesize_research (Placeholder)
+
 - [ ] Implement synthesize_research node (placeholder)
 - [ ] Generate research_summary from state
 - [ ] Calculate confidence_score (placeholder: 0.7)
@@ -311,6 +336,7 @@
 - [ ] Test node
 
 ### 8.8 Research Workflow Execution and Persistence
+
 - [ ] Implement workflow execution function
 - [ ] Add input validation
 - [ ] Execute graph with input state
@@ -321,6 +347,7 @@
 - [ ] Write integration test (tests/integration/test_research_workflow.py)
 
 ### 8.9 Research Workflow - Add LLM Integration
+
 - [ ] Add LangChain LLM provider initialization
 - [ ] Update research_company node with real LLM call
 - [ ] Update analyze_tech_stack node with real LLM call
@@ -332,6 +359,7 @@
 - [ ] Add LLM usage logging to LLMUsageLog table
 
 ### 8.10 Research API Endpoint
+
 - [ ] Add POST /api/v1/prospects/{prospect_id}/research endpoint
 - [ ] Add GET /api/v1/prospects/{prospect_id}/research (list all)
 - [ ] Add GET /api/v1/prospects/{prospect_id}/research/latest
@@ -346,6 +374,7 @@
 ## Task 9: LangGraph - Outreach Generation Workflow
 
 ### 9.1 Outreach Workflow State and Graph Setup
+
 - [ ] Create app/agents/outreach_workflow.py
 - [ ] Define OutreachState TypedDict per spec 5.2
 - [ ] Create StateGraph instance
@@ -355,6 +384,7 @@
 - [ ] Test compilation
 
 ### 9.2 Node: load_context
+
 - [ ] Implement load_context node
 - [ ] Load prospect, company, research from database
 - [ ] Load event if event_id provided
@@ -364,6 +394,7 @@
 - [ ] Add error handling (missing research)
 
 ### 9.3 Node: analyze_similar_wins
+
 - [ ] Implement analyze_similar_wins node
 - [ ] Use vector_service to search past_communications
 - [ ] Filter by similarity and outcome (successful)
@@ -372,6 +403,7 @@
 - [ ] Test with empty vector store
 
 ### 9.4 Nodes: Email Generation (Placeholders)
+
 - [ ] Implement plan_email_strategy node (placeholder)
 - [ ] Implement generate_subject node (placeholder)
 - [ ] Implement generate_body node (placeholder: 150-200 words)
@@ -380,6 +412,7 @@
 - [ ] Define state updates
 
 ### 9.5 Outreach Workflow Execution and Persistence
+
 - [ ] Implement workflow execution function
 - [ ] Execute graph with input state
 - [ ] Save draft to OutreachDraft table
@@ -388,6 +421,7 @@
 - [ ] Test full workflow (end-to-end with placeholders)
 
 ### 9.6 Outreach Workflow - Add LLM Integration
+
 - [ ] Update plan_email_strategy with real LLM call
 - [ ] Update generate_subject with real LLM call
 - [ ] Update generate_body with real LLM call (enforce 150-200 words)
@@ -397,6 +431,7 @@
 - [ ] Add LLM usage logging
 
 ### 9.7 Outreach API Endpoints
+
 - [ ] Add POST /api/v1/prospects/{prospect_id}/outreach
 - [ ] Add GET /api/v1/prospects/{prospect_id}/outreach
 - [ ] Add PATCH /api/v1/outreach/{draft_id} (for editing)
@@ -410,6 +445,7 @@
 ## Task 10: LangGraph - Event Matching Workflow
 
 ### 10.1 Event Matching Workflow Setup
+
 - [ ] Create app/agents/event_matching_workflow.py
 - [ ] Define EventMatchingState TypedDict per spec 5.3
 - [ ] Create StateGraph
@@ -419,6 +455,7 @@
 - [ ] Test compilation
 
 ### 10.2 Node: load_event
+
 - [ ] Implement load_event node
 - [ ] Load event from database
 - [ ] Update state
@@ -426,6 +463,7 @@
 - [ ] Add error handling
 
 ### 10.3 Node: find_candidates
+
 - [ ] Implement find_candidates node
 - [ ] SQL query: filter by target_industries, target_roles
 - [ ] Vector search: similarity to event description
@@ -435,12 +473,14 @@
 - [ ] Test with no matches
 
 ### 10.4 Node: score_relevance (Placeholder)
+
 - [ ] Implement score_relevance node (placeholder: random 0-100)
 - [ ] Define scoring logic structure
 - [ ] Update state with scored_prospects
 - [ ] Test node
 
 ### 10.5 Node: select_top_matches
+
 - [ ] Implement select_top_matches node
 - [ ] Filter: top 20 or score >= 70
 - [ ] Sort by score descending
@@ -448,6 +488,7 @@
 - [ ] Test filtering logic
 
 ### 10.6 Node: generate_invitations (Placeholder)
+
 - [ ] Implement generate_invitations node (placeholder)
 - [ ] For each top match, call outreach workflow
 - [ ] Include event_id in outreach context
@@ -456,6 +497,7 @@
 - [ ] Test with mock outreach calls
 
 ### 10.7 Event Matching - Add LLM Integration
+
 - [ ] Update score_relevance with real LLM scoring
 - [ ] Add concurrency control (max 5 concurrent LLM calls)
 - [ ] Add error handling (skip failed scores)
@@ -464,6 +506,7 @@
 - [ ] Add LLM usage logging
 
 ### 10.8 Event API Endpoints
+
 - [ ] Add POST /api/v1/events (create event)
 - [ ] Add GET /api/v1/events (list)
 - [ ] Add GET /api/v1/events/{event_id}
@@ -478,6 +521,7 @@
 ## Task 11: Reference Architecture Search Agent
 
 ### 11.1 Agent Implementation
+
 - [ ] Create app/agents/reference_architecture_search.py
 - [ ] Implement standalone agent (not full workflow)
 - [ ] Add web search integration
@@ -487,6 +531,7 @@
 - [ ] Test with sample queries ("e-commerce architecture", "fintech AWS")
 
 ### 11.2 Integration Points
+
 - [ ] Add optional call from research workflow (if needed)
 - [ ] Add direct API endpoint (optional): GET /api/v1/solutions/reference-search
 - [ ] Test integration with research workflow
@@ -497,6 +542,7 @@
 ## Task 12: Additional API Endpoints
 
 ### 12.1 AWS Solutions Endpoints
+
 - [ ] Add GET /api/v1/solutions (list all)
 - [ ] Add POST /api/v1/solutions (create - admin use)
 - [ ] Add GET /api/v1/solutions/search (query parameters)
@@ -504,12 +550,14 @@
 - [ ] Write API tests
 
 ### 12.2 Interactions Endpoints
+
 - [ ] Add POST /api/v1/prospects/{prospect_id}/interactions
 - [ ] Add GET /api/v1/prospects/{prospect_id}/interactions
 - [ ] Test endpoints
 - [ ] Write API tests
 
 ### 12.3 Metrics Endpoint
+
 - [ ] Add GET /api/v1/metrics/llm-usage
 - [ ] Query LLMUsageLog table
 - [ ] Support date range filtering (start_date, end_date)
@@ -522,6 +570,7 @@
 ## Task 13: Gradio UI
 
 ### 13.1 Gradio UI Setup
+
 - [ ] Create ui/app.py
 - [ ] Create ui/Dockerfile
 - [ ] Create ui/requirements.txt
@@ -529,6 +578,7 @@
 - [ ] Test basic Gradio app launch
 
 ### 13.2 Tab: Workflow Execution
+
 - [ ] Create "Workflow Execution" tab
 - [ ] Add workflow dropdown (Research, Outreach, Event Matching)
 - [ ] Add dynamic inputs based on workflow selection
@@ -539,6 +589,7 @@
 - [ ] Test with all three workflows
 
 ### 13.3 Tab: View Results
+
 - [ ] Create "View Results" tab
 - [ ] Add prospect selector (dropdown or search)
 - [ ] Add sub-tabs: Research Summary, Outreach Drafts, Interactions
@@ -550,6 +601,7 @@
 - [ ] Test data display
 
 ### 13.4 Tab: Upload Context
+
 - [ ] Create "Upload Context" tab
 - [ ] Add file uploader (CSV, TXT, DOCX, PDF)
 - [ ] Add upload type selector (Prospects, Communication, Event)
@@ -560,6 +612,7 @@
 - [ ] Test CSV upload
 
 ### 13.5 Tab: Dashboard (Optional)
+
 - [ ] Create "Dashboard" tab
 - [ ] Display prospect count by status (bar chart)
 - [ ] Display LLM usage summary (last 7 days)
@@ -571,6 +624,7 @@
 ## Task 14: Testing Infrastructure
 
 ### 14.1 Test Configuration
+
 - [ ] Create pytest.ini
 - [ ] Create tests/conftest.py with fixtures
 - [ ] Add database test fixtures (test DB setup/teardown)
@@ -579,6 +633,7 @@
 - [ ] Test fixture functionality
 
 ### 14.2 Unit Tests - Services
+
 - [ ] Complete tests/unit/services/test_vector_service.py
 - [ ] Complete tests/unit/services/test_solution_matcher.py
 - [ ] Complete tests/unit/services/test_database.py
@@ -587,6 +642,7 @@
 - [ ] Check coverage: pytest --cov=app/services
 
 ### 14.3 API Tests
+
 - [ ] Complete tests/api/test_prospects_endpoints.py
 - [ ] Complete tests/api/test_research_endpoints.py
 - [ ] Complete tests/api/test_outreach_endpoints.py
@@ -596,6 +652,7 @@
 - [ ] Check coverage
 
 ### 14.4 Integration Tests (Optional)
+
 - [ ] Add tests/integration/test_research_workflow.py (with mocked LLM)
 - [ ] Add tests/integration/test_outreach_workflow.py
 - [ ] Add tests/integration/test_event_matching_workflow.py
@@ -603,6 +660,7 @@
 - [ ] Document decision to skip if time-constrained
 
 ### 14.5 Curl Test Scripts
+
 - [ ] Create tests/api/curl_tests/ directory
 - [ ] Create scripts/generate_curl_tests.py
 - [ ] Generate curl scripts from OpenAPI schema (use LLM)
@@ -615,6 +673,7 @@
 ## Task 15: Docker and Deployment
 
 ### 15.1 Backend Dockerfile
+
 - [ ] Create backend/Dockerfile
 - [ ] Use Python 3.11+ base image
 - [ ] Install dependencies from requirements.txt
@@ -625,17 +684,19 @@
 - [ ] Test docker run locally
 
 ### 15.2 Docker Compose Setup
+
 - [ ] Create docker-compose.yml
 - [ ] Add backend service (build: ./backend)
 - [ ] Add gradio-ui service (build: ./ui)
 - [ ] Configure port mappings (8000, 7860)
 - [ ] Add environment variables
-- [ ] Configure host.docker.internal for PostgreSQL/Qdrant
+- [ ] Configure host.docker.internal for PostgreSQL with pgvector
 - [ ] Add volume for logs
 - [ ] Test: docker-compose up
 - [ ] Test: verify both services accessible
 
 ### 15.3 AWS ECS Task Definitions
+
 - [ ] Create deployment/ecs-backend-task.json
 - [ ] Configure CPU: 1024, Memory: 2048
 - [ ] Add container definition with ECR image placeholder
@@ -645,9 +706,9 @@
 - [ ] Document task definitions
 
 ### 15.4 AWS Deployment Documentation
+
 - [ ] Document ECR repository setup
-- [ ] Document RDS PostgreSQL setup steps
-- [ ] Document Qdrant Cloud setup
+- [ ] Document RDS PostgreSQL 15+ setup with pgvector extension
 - [ ] Document Secrets Manager configuration
 - [ ] Document ECS cluster creation
 - [ ] Document service creation
@@ -660,6 +721,7 @@
 ## Task 16: Documentation
 
 ### 16.1 README.md
+
 - [ ] Create comprehensive README.md
 - [ ] Add project overview
 - [ ] Add prerequisites section
@@ -672,6 +734,7 @@
 - [ ] Add troubleshooting section
 
 ### 16.2 API Documentation
+
 - [ ] Verify FastAPI auto-generated docs at /docs
 - [ ] Verify ReDoc at /redoc
 - [ ] Add docstrings to all endpoint functions
@@ -679,6 +742,7 @@
 - [ ] Test OpenAPI schema completeness
 
 ### 16.3 Code Documentation
+
 - [ ] Add docstrings to all workflow nodes
 - [ ] Add docstrings to service classes and methods
 - [ ] Add inline comments for complex logic
@@ -686,6 +750,7 @@
 - [ ] Document configuration options
 
 ### 16.4 Final Documentation Review
+
 - [ ] Sync SPECS.md with final implementation
 - [ ] Update any deviations from original spec
 - [ ] Document known limitations
@@ -697,6 +762,7 @@
 ## Task 17: LangSmith Integration
 
 ### 17.1 LangSmith Configuration
+
 - [ ] Add LANGCHAIN_TRACING_V2 to environment variables
 - [ ] Add LANGCHAIN_API_KEY configuration
 - [ ] Add LANGCHAIN_PROJECT configuration
@@ -704,6 +770,7 @@
 - [ ] Verify traces appear in dashboard
 
 ### 17.2 Tracing Enhancement
+
 - [ ] Add custom trace names for workflows
 - [ ] Add metadata to traces (prospect_id, workflow_type)
 - [ ] Test trace visibility in LangSmith
@@ -714,6 +781,7 @@
 ## Task 18: Final Integration and Testing
 
 ### 18.1 End-to-End Testing
+
 - [ ] Import test prospects via CSV
 - [ ] Run research workflow on test prospect
 - [ ] Verify research saved to database
@@ -724,6 +792,7 @@
 - [ ] Verify invitations generated
 
 ### 18.2 Performance Testing
+
 - [ ] Measure research workflow execution time
 - [ ] Measure solution matching latency (target < 500ms for Tier 1)
 - [ ] Test concurrent workflow executions
@@ -731,15 +800,17 @@
 - [ ] Document performance metrics
 
 ### 18.3 Error Scenario Testing
+
 - [ ] Test with missing prospect (404 errors)
 - [ ] Test with invalid CSV format
-- [ ] Test with Qdrant unavailable (vector store failure)
+- [ ] Test with vector index unavailable (fallback to full-text search)
 - [ ] Test with MCP unavailable (degradation to Tier 1)
 - [ ] Test with LLM API failure (retry logic)
 - [ ] Test database connection failure
 - [ ] Document error handling behavior
 
 ### 18.4 UI Testing
+
 - [ ] Test all workflows from Gradio UI
 - [ ] Test CSV upload from UI
 - [ ] Test result viewing from UI
@@ -752,6 +823,7 @@
 ## Task 19: Capstone Deliverables
 
 ### 19.1 Code Repository
+
 - [ ] Create clean git history
 - [ ] Tag v1.0.0 release
 - [ ] Push to GitHub/GitLab
@@ -760,6 +832,7 @@
 - [ ] Verify all documentation included
 
 ### 19.2 Demo Video
+
 - [ ] Script demo walkthrough (5-10 minutes)
 - [ ] Record: import prospects
 - [ ] Record: run research workflow
@@ -770,6 +843,7 @@
 - [ ] Edit and export video
 
 ### 19.3 Presentation Slides
+
 - [ ] Create presentation deck
 - [ ] Slide: Project overview
 - [ ] Slide: Architecture diagram
@@ -786,16 +860,19 @@
 ## Task 20: Optional Enhancements (Time Permitting)
 
 ### 20.1 Enhanced Error Messages
+
 - [ ] Add user-friendly error messages in API responses
 - [ ] Add validation error details
 - [ ] Add suggestions for common errors
 
 ### 20.2 Performance Optimizations
+
 - [ ] Add database query optimization
 - [ ] Add connection pooling tuning
 - [ ] Add async optimizations where applicable
 
 ### 20.3 Additional Features
+
 - [ ] Add prospect status transitions (workflow: NEW → RESEARCHED → CONTACTED)
 - [ ] Add bulk operations (batch research)
 - [ ] Add export functionality (JSON, CSV downloads)

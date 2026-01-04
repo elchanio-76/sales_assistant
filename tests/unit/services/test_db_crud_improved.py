@@ -15,7 +15,9 @@ import sys
 import os
 
 # Add app directory to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
+)
 
 from app.models.database import Base, Prospect, Company, Industry, ProspectStatus
 import app.services.db_crud as crud
@@ -23,8 +25,7 @@ import app.services.db_crud as crud
 
 # Test database configuration
 TEST_DATABASE_URL = os.getenv(
-    "TEST_DATABASE_URL",
-    "postgresql://postgres:postgres@localhost:5432/sales_test"
+    "TEST_DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/sales_test"
 )
 
 
@@ -48,18 +49,22 @@ def test_db_engine():
         conn.execute(text("COMMIT"))  # End any open transaction
 
         # Get all table names except alembic_version
-        result = conn.execute(text("""
+        result = conn.execute(
+            text(
+                """
             SELECT tablename
             FROM pg_tables
             WHERE schemaname = 'public'
             AND tablename != 'alembic_version'
-        """))
+        """
+            )
+        )
 
         tables = [row[0] for row in result]
 
         if tables:
             # Truncate all tables (CASCADE handles foreign keys)
-            tables_str = ', '.join(tables)
+            tables_str = ", ".join(tables)
             conn.execute(text(f"TRUNCATE TABLE {tables_str} RESTART IDENTITY CASCADE"))
             conn.execute(text("COMMIT"))
 
@@ -97,17 +102,21 @@ def clean_tables(test_db_engine):
         conn.execute(text("COMMIT"))
 
         # Truncate all tables except alembic_version
-        result = conn.execute(text("""
+        result = conn.execute(
+            text(
+                """
             SELECT tablename
             FROM pg_tables
             WHERE schemaname = 'public'
             AND tablename != 'alembic_version'
-        """))
+        """
+            )
+        )
 
         tables = [row[0] for row in result]
 
         if tables:
-            tables_str = ', '.join(tables)
+            tables_str = ", ".join(tables)
             conn.execute(text(f"TRUNCATE TABLE {tables_str} RESTART IDENTITY CASCADE"))
             conn.execute(text("COMMIT"))
 
@@ -129,7 +138,7 @@ def sample_company(test_session, sample_industry):
         name="Acme Corp",
         industry_id=sample_industry.id,
         size="100-500",
-        website="https://acme.com"
+        website="https://acme.com",
     )
     test_session.add(company)
     test_session.commit()
@@ -147,7 +156,7 @@ def sample_prospect(test_session, sample_company):
         location="New York, NY",
         company_id=sample_company.id,
         status=ProspectStatus.NEW,
-        is_active=True
+        is_active=True,
     )
     test_session.add(prospect)
     test_session.commit()
@@ -164,6 +173,7 @@ def mock_session_local(monkeypatch, test_session):
     This ensures CRUD operations use the test transaction,
     which gets rolled back after each test.
     """
+
     def mock_session_maker():
         return test_session
 
@@ -183,7 +193,7 @@ class TestCreateOrUpdateProspect:
             location="San Francisco, CA",
             company_id=sample_company.id,
             status=ProspectStatus.NEW,
-            is_active=True
+            is_active=True,
         )
 
         result = crud.create_or_update_prospect(new_prospect)
@@ -191,9 +201,11 @@ class TestCreateOrUpdateProspect:
         assert result is True
 
         # Verify prospect was created
-        saved_prospect = test_session.query(Prospect).filter(
-            Prospect.email == "jane.smith@acme.com"
-        ).first()
+        saved_prospect = (
+            test_session.query(Prospect)
+            .filter(Prospect.email == "jane.smith@acme.com")
+            .first()
+        )
         assert saved_prospect is not None
         assert saved_prospect.full_name == "Jane Smith"
         assert saved_prospect.location == "San Francisco, CA"
@@ -203,15 +215,17 @@ class TestCreateOrUpdateProspect:
         minimal_prospect = Prospect(
             full_name="Minimal User",
             email="minimal@test.com",
-            company_id=sample_company.id
+            company_id=sample_company.id,
         )
 
         result = crud.create_or_update_prospect(minimal_prospect)
 
         assert result is True
-        saved = test_session.query(Prospect).filter(
-            Prospect.email == "minimal@test.com"
-        ).first()
+        saved = (
+            test_session.query(Prospect)
+            .filter(Prospect.email == "minimal@test.com")
+            .first()
+        )
         assert saved is not None
         assert saved.full_name == "Minimal User"
         assert saved.status == ProspectStatus.NEW
@@ -252,7 +266,7 @@ class TestGetAllProspects:
             prospect = Prospect(
                 full_name=data["full_name"],
                 email=data["email"],
-                company_id=sample_company.id
+                company_id=sample_company.id,
             )
             test_session.add(prospect)
         test_session.commit()
@@ -285,7 +299,9 @@ class TestGetProspectById:
 
         assert prospect is None
 
-    def test_get_prospect_with_relationships(self, test_session, sample_prospect, sample_company):
+    def test_get_prospect_with_relationships(
+        self, test_session, sample_prospect, sample_company
+    ):
         """Test that relationships are accessible."""
         # Get IDs before they might become detached
         expected_company_id = sample_company.id
@@ -322,7 +338,7 @@ class TestGetProspectByName:
             prospect = Prospect(
                 full_name="Common Name",
                 email=f"user{i}@test.com",
-                company_id=sample_company.id
+                company_id=sample_company.id,
             )
             test_session.add(prospect)
         test_session.commit()
@@ -339,7 +355,7 @@ class TestGetProspectByName:
             prospect = Prospect(
                 full_name="Same Name",
                 email=f"same{i}@test.com",
-                company_id=sample_company.id
+                company_id=sample_company.id,
             )
             test_session.add(prospect)
         test_session.commit()
@@ -362,9 +378,9 @@ class TestDeleteProspect:
         assert result is True
 
         # Verify prospect was deleted
-        deleted = test_session.query(Prospect).filter(
-            Prospect.id == prospect_id
-        ).first()
+        deleted = (
+            test_session.query(Prospect).filter(Prospect.id == prospect_id).first()
+        )
         assert deleted is None
 
     def test_delete_nonexistent_prospect(self, test_session):
@@ -399,7 +415,7 @@ class TestProspectCRUDIntegration:
         new_prospect = Prospect(
             full_name="Integration Test",
             email="integration@test.com",
-            company_id=sample_company.id
+            company_id=sample_company.id,
         )
         create_result = crud.create_or_update_prospect(new_prospect)
         assert create_result is True
@@ -407,9 +423,11 @@ class TestProspectCRUDIntegration:
         test_session.commit()
 
         # Get the ID of created prospect
-        created = test_session.query(Prospect).filter(
-            Prospect.email == "integration@test.com"
-        ).first()
+        created = (
+            test_session.query(Prospect)
+            .filter(Prospect.email == "integration@test.com")
+            .first()
+        )
         assert created is not None
         created_id = created.id
 
@@ -428,18 +446,16 @@ class TestProspectCRUDIntegration:
         deleted = crud.get_prospect_by_id(created_id)
         assert deleted is None
 
-    def test_multiple_prospects_different_companies(self, test_session, sample_industry):
+    def test_multiple_prospects_different_companies(
+        self, test_session, sample_industry
+    ):
         """Test managing prospects from different companies."""
         # Create two companies
         company1 = Company(
-            name="Company A Unique",
-            industry_id=sample_industry.id,
-            size="10-50"
+            name="Company A Unique", industry_id=sample_industry.id, size="10-50"
         )
         company2 = Company(
-            name="Company B Unique",
-            industry_id=sample_industry.id,
-            size="500+"
+            name="Company B Unique", industry_id=sample_industry.id, size="500+"
         )
         test_session.add(company1)
         test_session.add(company2)
@@ -453,12 +469,12 @@ class TestProspectCRUDIntegration:
         prospect1 = Prospect(
             full_name="Person A",
             email="persona@companya-unique.com",
-            company_id=company1_id
+            company_id=company1_id,
         )
         prospect2 = Prospect(
             full_name="Person B",
             email="personb@companyb-unique.com",
-            company_id=company2_id
+            company_id=company2_id,
         )
 
         result1 = crud.create_or_update_prospect(prospect1)
@@ -470,12 +486,16 @@ class TestProspectCRUDIntegration:
         test_session.commit()
 
         # Verify both exist
-        p1 = test_session.query(Prospect).filter(
-            Prospect.email == "persona@companya-unique.com"
-        ).first()
-        p2 = test_session.query(Prospect).filter(
-            Prospect.email == "personb@companyb-unique.com"
-        ).first()
+        p1 = (
+            test_session.query(Prospect)
+            .filter(Prospect.email == "persona@companya-unique.com")
+            .first()
+        )
+        p2 = (
+            test_session.query(Prospect)
+            .filter(Prospect.email == "personb@companyb-unique.com")
+            .first()
+        )
 
         assert p1 is not None
         assert p2 is not None
@@ -492,7 +512,7 @@ class TestEdgeCases:
         invalid_prospect = Prospect(
             full_name="No Company",
             email="nocompany@test.com",
-            company_id=99999999  # Non-existent company
+            company_id=99999999,  # Non-existent company
         )
 
         result = crud.create_or_update_prospect(invalid_prospect)

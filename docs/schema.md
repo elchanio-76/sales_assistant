@@ -1,6 +1,7 @@
 # Database Schema Documentation
 
 ## Overview
+
 Sales assistant database containing prospect management, event tracking, solutions catalog, and LLM usage analytics.
 
 ---
@@ -8,6 +9,7 @@ Sales assistant database containing prospect management, event tracking, solutio
 ## Tables
 
 ### alembic_version
+
 Migration version tracking table.
 
 | Column | Type | Constraints |
@@ -17,6 +19,7 @@ Migration version tracking table.
 ---
 
 ### industries
+
 Industry classifications for companies and solutions.
 
 | Column | Type | Constraints |
@@ -29,6 +32,7 @@ Industry classifications for companies and solutions.
 ---
 
 ### companies
+
 Company information linked to industries.
 
 | Column | Type | Constraints |
@@ -44,6 +48,7 @@ Company information linked to industries.
 ---
 
 ### prospects
+
 Sales prospects with contact information and engagement status.
 
 | Column | Type | Constraints |
@@ -63,6 +68,7 @@ Sales prospects with contact information and engagement status.
 ---
 
 ### solutions
+
 Product/service solutions with pricing and categorization.
 
 | Column | Type | Constraints |
@@ -80,6 +86,7 @@ Product/service solutions with pricing and categorization.
 ---
 
 ### industry_solutions
+
 Junction table linking industries to relevant solutions.
 
 | Column | Type | Constraints |
@@ -92,6 +99,7 @@ Junction table linking industries to relevant solutions.
 ---
 
 ### events
+
 Sales events and conferences with targeting information.
 
 | Column | Type | Constraints |
@@ -111,6 +119,7 @@ Sales events and conferences with targeting information.
 ---
 
 ### interactions
+
 Prospect interaction history (emails, calls, meetings, etc.).
 
 | Column | Type | Constraints |
@@ -130,6 +139,7 @@ Prospect interaction history (emails, calls, meetings, etc.).
 ---
 
 ### outreach_drafts
+
 Generated outreach communication drafts.
 
 | Column | Type | Constraints |
@@ -146,6 +156,7 @@ Generated outreach communication drafts.
 ---
 
 ### prospect_research
+
 Research findings and recommendations for prospects.
 
 | Column | Type | Constraints |
@@ -162,6 +173,7 @@ Research findings and recommendations for prospects.
 ---
 
 ### llm_usage_logs
+
 LLM API usage tracking for cost and performance analytics.
 
 | Column | Type | Constraints |

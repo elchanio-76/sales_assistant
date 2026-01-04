@@ -12,7 +12,9 @@ import sys
 import os
 
 # Add app directory to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
+)
 
 from app.models.database import Base, Company, Industry
 import app.services.db_crud as crud
@@ -20,8 +22,7 @@ import app.services.db_crud as crud
 
 # Test database configuration
 TEST_DATABASE_URL = os.getenv(
-    "TEST_DATABASE_URL",
-    "postgresql://postgres:postgres@localhost:5432/sales_test"
+    "TEST_DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/sales_test"
 )
 
 
@@ -45,18 +46,22 @@ def test_db_engine():
         conn.execute(text("COMMIT"))  # End any open transaction
 
         # Get all table names except alembic_version
-        result = conn.execute(text("""
+        result = conn.execute(
+            text(
+                """
             SELECT tablename
             FROM pg_tables
             WHERE schemaname = 'public'
             AND tablename != 'alembic_version'
-        """))
+        """
+            )
+        )
 
         tables = [row[0] for row in result]
 
         if tables:
             # Truncate all tables (CASCADE handles foreign keys)
-            tables_str = ', '.join(tables)
+            tables_str = ", ".join(tables)
             conn.execute(text(f"TRUNCATE TABLE {tables_str} RESTART IDENTITY CASCADE"))
             conn.execute(text("COMMIT"))
 
@@ -100,7 +105,7 @@ def sample_company(test_session, sample_industry):
         name="Acme Corp",
         industry_id=sample_industry.id,
         size="100-500",
-        website="https://acme.com"
+        website="https://acme.com",
     )
     test_session.add(company)
     test_session.commit()
@@ -117,6 +122,7 @@ def mock_session_local(monkeypatch, test_session):
     This ensures CRUD operations use the test transaction,
     which gets rolled back after each test.
     """
+
     def mock_session_maker():
         return test_session
 
@@ -133,7 +139,7 @@ class TestCreateOrUpdateCompany:
             name="Tech Innovations Inc",
             industry_id=sample_industry.id,
             size="50-100",
-            website="https://techinnovations.com"
+            website="https://techinnovations.com",
         )
 
         result = crud.create_or_update_company(new_company)
@@ -141,9 +147,11 @@ class TestCreateOrUpdateCompany:
         assert result is True
 
         # Verify company was created
-        saved_company = test_session.query(Company).filter(
-            Company.name == "Tech Innovations Inc"
-        ).first()
+        saved_company = (
+            test_session.query(Company)
+            .filter(Company.name == "Tech Innovations Inc")
+            .first()
+        )
         assert saved_company is not None
         assert saved_company.name == "Tech Innovations Inc"
         assert saved_company.size == "50-100"
@@ -152,17 +160,15 @@ class TestCreateOrUpdateCompany:
     def test_create_company_with_minimal_fields(self, test_session, sample_industry):
         """Test creating company with only required fields."""
         minimal_company = Company(
-            name="Minimal Corp",
-            industry_id=sample_industry.id,
-            size="10-50"
+            name="Minimal Corp", industry_id=sample_industry.id, size="10-50"
         )
 
         result = crud.create_or_update_company(minimal_company)
 
         assert result is True
-        saved = test_session.query(Company).filter(
-            Company.name == "Minimal Corp"
-        ).first()
+        saved = (
+            test_session.query(Company).filter(Company.name == "Minimal Corp").first()
+        )
         assert saved is not None
         assert saved.name == "Minimal Corp"
         assert saved.website is None
@@ -172,7 +178,7 @@ class TestCreateOrUpdateCompany:
         invalid_company = Company(
             name="Invalid Industry Co",
             industry_id=99999999,  # Non-existent industry
-            size="10-50"
+            size="10-50",
         )
 
         result = crud.create_or_update_company(invalid_company)
@@ -211,9 +217,7 @@ class TestGetAllCompanies:
 
         for data in companies_data:
             company = Company(
-                name=data["name"],
-                industry_id=sample_industry.id,
-                size=data["size"]
+                name=data["name"], industry_id=sample_industry.id, size=data["size"]
             )
             test_session.add(company)
         test_session.commit()
@@ -246,7 +250,9 @@ class TestGetCompanyById:
 
         assert company is None
 
-    def test_get_company_with_relationships(self, test_session, sample_company, sample_industry):
+    def test_get_company_with_relationships(
+        self, test_session, sample_company, sample_industry
+    ):
         """Test that relationships are accessible."""
         # Get IDs before they might become detached
         expected_industry_id = sample_industry.id
@@ -284,7 +290,7 @@ class TestGetCompanyByName:
                 name="Common Name Corp",
                 industry_id=sample_industry.id,
                 size="10-50",
-                website=f"https://example{i}.com"
+                website=f"https://example{i}.com",
             )
             test_session.add(company)
         test_session.commit()
@@ -302,7 +308,7 @@ class TestGetCompanyByName:
                 name="Same Name Inc",
                 industry_id=sample_industry.id,
                 size="10-50",
-                website=f"https://samename{i}.com"
+                website=f"https://samename{i}.com",
             )
             test_session.add(company)
         test_session.commit()
@@ -325,9 +331,7 @@ class TestDeleteCompany:
         assert result is True
 
         # Verify company was deleted
-        deleted = test_session.query(Company).filter(
-            Company.id == company_id
-        ).first()
+        deleted = test_session.query(Company).filter(Company.id == company_id).first()
         assert deleted is None
 
     def test_delete_nonexistent_company(self, test_session):
@@ -363,7 +367,7 @@ class TestCompanyCRUDIntegration:
             name="Integration Test Corp",
             industry_id=sample_industry.id,
             size="100-500",
-            website="https://integration.com"
+            website="https://integration.com",
         )
         create_result = crud.create_or_update_company(new_company)
         assert create_result is True
@@ -371,9 +375,11 @@ class TestCompanyCRUDIntegration:
         test_session.commit()
 
         # Get the ID of created company
-        created = test_session.query(Company).filter(
-            Company.name == "Integration Test Corp"
-        ).first()
+        created = (
+            test_session.query(Company)
+            .filter(Company.name == "Integration Test Corp")
+            .first()
+        )
         assert created is not None
         created_id = created.id
 
@@ -407,14 +413,10 @@ class TestCompanyCRUDIntegration:
 
         # Create companies for each industry
         company1 = Company(
-            name="Finance Corp Unique",
-            industry_id=industry1_id,
-            size="100-500"
+            name="Finance Corp Unique", industry_id=industry1_id, size="100-500"
         )
         company2 = Company(
-            name="Healthcare Inc Unique",
-            industry_id=industry2_id,
-            size="50-100"
+            name="Healthcare Inc Unique", industry_id=industry2_id, size="50-100"
         )
 
         result1 = crud.create_or_update_company(company1)
@@ -426,12 +428,16 @@ class TestCompanyCRUDIntegration:
         test_session.commit()
 
         # Verify both exist
-        c1 = test_session.query(Company).filter(
-            Company.name == "Finance Corp Unique"
-        ).first()
-        c2 = test_session.query(Company).filter(
-            Company.name == "Healthcare Inc Unique"
-        ).first()
+        c1 = (
+            test_session.query(Company)
+            .filter(Company.name == "Finance Corp Unique")
+            .first()
+        )
+        c2 = (
+            test_session.query(Company)
+            .filter(Company.name == "Healthcare Inc Unique")
+            .first()
+        )
 
         assert c1 is not None
         assert c2 is not None
@@ -448,7 +454,7 @@ class TestCompanyEdgeCases:
         invalid_company = Company(
             name="No Industry Co",
             industry_id=99999999,  # Non-existent industry
-            size="10-50"
+            size="10-50",
         )
 
         result = crud.create_or_update_company(invalid_company)

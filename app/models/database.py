@@ -1,4 +1,4 @@
-from sqlalchemy import  Integer, String, ForeignKey, DateTime, Boolean, Text, Float, JSON
+from sqlalchemy import Integer, String, ForeignKey, DateTime, Boolean, Text, Float, JSON
 from enum import Enum
 from sqlalchemy.dialects.postgresql import JSONB, ENUM
 from sqlalchemy.orm import relationship, Mapped, mapped_column, DeclarativeBase
@@ -8,14 +8,16 @@ import pytz
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import create_engine, text
 
+
 # Enums
-class ProspectStatus(Enum): # Not used yet
+class ProspectStatus(Enum):  # Not used yet
     NEW = "new"
     RESEARCHED = "researched"
     CONTACTED = "contacted"
     ENGAGED = "engaged"
     QUALIFIED = "qualified"
     INACTIVE = "inactive"
+
 
 class PricingModels(Enum):
     ON_DEMAND = "on_demand"
@@ -25,6 +27,7 @@ class PricingModels(Enum):
     SUBSCRIPTION = "subscription"
     PPA = "ppa"
 
+
 class InteractionType(Enum):
     EMAIL = "email"
     MEETING = "meeting"
@@ -32,9 +35,11 @@ class InteractionType(Enum):
     EVENT = "event"
     LINKEDIN = "linkedin"
 
+
 # Tables
 class Base(DeclarativeBase):
     pass
+
 
 class Prospect(Base):
     __tablename__ = "prospects"
@@ -47,18 +52,20 @@ class Prospect(Base):
     company_id: Mapped[int] = mapped_column(ForeignKey("companies.id"))
     last_contacted_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    status: Mapped[ProspectStatus] = mapped_column(ENUM(ProspectStatus, name="prospect_status"), default=ProspectStatus.NEW)
+    status: Mapped[ProspectStatus] = mapped_column(
+        ENUM(ProspectStatus, name="prospect_status"), default=ProspectStatus.NEW
+    )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, 
-        default=datetime.now(tz= pytz.timezone("Europe/Athens"))
+        DateTime, default=datetime.now(tz=pytz.timezone("Europe/Athens"))
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, 
-        default=datetime.now(tz= pytz.timezone("Europe/Athens")),
-        onupdate=datetime.now(tz= pytz.timezone("Europe/Athens"))
+        DateTime,
+        default=datetime.now(tz=pytz.timezone("Europe/Athens")),
+        onupdate=datetime.now(tz=pytz.timezone("Europe/Athens")),
     )
     # One to One relationship with Company
     company: Mapped["Company"] = relationship("Company", back_populates="prospects")
+
 
 class Company(Base):
     __tablename__ = "companies"
@@ -69,18 +76,22 @@ class Company(Base):
     size: Mapped[str] = mapped_column(String(255))
     website: Mapped[Optional[str]] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, 
-        default=datetime.now(tz= pytz.timezone("Europe/Athens"))
+        DateTime, default=datetime.now(tz=pytz.timezone("Europe/Athens"))
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, 
-        default=datetime.now(tz= pytz.timezone("Europe/Athens")), 
-        onupdate=datetime.now(tz= pytz.timezone("Europe/Athens"))
+        DateTime,
+        default=datetime.now(tz=pytz.timezone("Europe/Athens")),
+        onupdate=datetime.now(tz=pytz.timezone("Europe/Athens")),
     )
     # One-to-One relationship with Industry
-    industries: Mapped["Industry"] = relationship("Industry", back_populates="companies")
+    industries: Mapped["Industry"] = relationship(
+        "Industry", back_populates="companies"
+    )
     # One to many relationship with Prospect
-    prospects: Mapped[list["Prospect"]] = relationship("Prospect", back_populates="company")
+    prospects: Mapped[list["Prospect"]] = relationship(
+        "Prospect", back_populates="company"
+    )
+
 
 class Industry(Base):
     __tablename__ = "industries"
@@ -88,56 +99,72 @@ class Industry(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, 
-        default=datetime.now(tz= pytz.timezone("Europe/Athens"))
+        DateTime, default=datetime.now(tz=pytz.timezone("Europe/Athens"))
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, 
-        default=datetime.now(tz= pytz.timezone("Europe/Athens")), 
-        onupdate=datetime.now(tz= pytz.timezone("Europe/Athens"))
+        DateTime,
+        default=datetime.now(tz=pytz.timezone("Europe/Athens")),
+        onupdate=datetime.now(tz=pytz.timezone("Europe/Athens")),
     )
     # One-to-many relationship with Company
-    companies: Mapped[list["Company"]] = relationship("Company", back_populates="industries")
-    industry_solutions: Mapped[list["IndustrySolution"]] = relationship("IndustrySolution", back_populates="industries")
+    companies: Mapped[list["Company"]] = relationship(
+        "Company", back_populates="industries"
+    )
+    industry_solutions: Mapped[list["IndustrySolution"]] = relationship(
+        "IndustrySolution", back_populates="industries"
+    )
 
-class IndustrySolution(Base): # Reationship Table
+
+class IndustrySolution(Base):  # Reationship Table
     __tablename__ = "industry_solutions"
     # Use a composite primary key to avoid duplicate entries
-    industry_id: Mapped[int] = mapped_column(ForeignKey("industries.id"), primary_key=True)
-    solution_id: Mapped[int] = mapped_column(ForeignKey("solutions.id"), primary_key=True)
+    industry_id: Mapped[int] = mapped_column(
+        ForeignKey("industries.id"), primary_key=True
+    )
+    solution_id: Mapped[int] = mapped_column(
+        ForeignKey("solutions.id"), primary_key=True
+    )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, 
-        default=datetime.now(tz= pytz.timezone("Europe/Athens"))
+        DateTime, default=datetime.now(tz=pytz.timezone("Europe/Athens"))
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, 
-        default=datetime.now(tz= pytz.timezone("Europe/Athens")), 
-        onupdate=datetime.now(tz= pytz.timezone("Europe/Athens"))
+        DateTime,
+        default=datetime.now(tz=pytz.timezone("Europe/Athens")),
+        onupdate=datetime.now(tz=pytz.timezone("Europe/Athens")),
     )
-    industries: Mapped["Industry"] = relationship("Industry", back_populates="industry_solutions")
-    solutions: Mapped["Solution"] = relationship("Solution", back_populates="industry_solutions")
+    industries: Mapped["Industry"] = relationship(
+        "Industry", back_populates="industry_solutions"
+    )
+    solutions: Mapped["Solution"] = relationship(
+        "Solution", back_populates="industry_solutions"
+    )
+
 
 class Solution(Base):
     __tablename__ = "solutions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(255))
-    category: Mapped[str] = mapped_column(String(255))   # TODO: Change to enum
+    category: Mapped[str] = mapped_column(String(255))  # TODO: Change to enum
     description: Mapped[str] = mapped_column(Text)
     use_cases: Mapped[JSONB] = mapped_column(JSONB, nullable=True)
     keywords: Mapped[Optional[JSONB]] = mapped_column(JSONB, nullable=True)
-    pricing_model: Mapped[Enum] = mapped_column(ENUM(PricingModels, name="pricing_models"))  # TODO: Change to enum
+    pricing_model: Mapped[Enum] = mapped_column(
+        ENUM(PricingModels, name="pricing_models")
+    )  # TODO: Change to enum
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, 
-        default=datetime.now(tz= pytz.timezone("Europe/Athens"))
+        DateTime, default=datetime.now(tz=pytz.timezone("Europe/Athens"))
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, 
-        default=datetime.now(tz= pytz.timezone("Europe/Athens")), 
-        onupdate=datetime.now(tz= pytz.timezone("Europe/Athens"))
+        DateTime,
+        default=datetime.now(tz=pytz.timezone("Europe/Athens")),
+        onupdate=datetime.now(tz=pytz.timezone("Europe/Athens")),
     )
     # One-to-many relationship with IndustrySolution
-    industry_solutions: Mapped[list["IndustrySolution"]] = relationship("IndustrySolution", back_populates="solutions")
+    industry_solutions: Mapped[list["IndustrySolution"]] = relationship(
+        "IndustrySolution", back_populates="solutions"
+    )
+
 
 class ProspectResearch(Base):
     __tablename__ = "prospect_research"
@@ -149,16 +176,16 @@ class ProspectResearch(Base):
     recommended_solutions: Mapped[Optional[JSONB]] = mapped_column(JSONB, nullable=True)
     confidence_score: Mapped[float] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, 
-        default=datetime.now(tz= pytz.timezone("Europe/Athens"))
+        DateTime, default=datetime.now(tz=pytz.timezone("Europe/Athens"))
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, 
-        default=datetime.now(tz= pytz.timezone("Europe/Athens")), 
-        onupdate=datetime.now(tz= pytz.timezone("Europe/Athens"))
+        DateTime,
+        default=datetime.now(tz=pytz.timezone("Europe/Athens")),
+        onupdate=datetime.now(tz=pytz.timezone("Europe/Athens")),
     )
     # Many-to-one relationship with Prospect
     prospect: Mapped["Prospect"] = relationship("Prospect")
+
 
 class Event(Base):
     __tablename__ = "events"
@@ -168,64 +195,69 @@ class Event(Base):
     description: Mapped[str] = mapped_column(Text)
     location: Mapped[str] = mapped_column(String(255))
     target_industries: Mapped[Optional[JSONB]] = mapped_column(JSONB, nullable=True)
-    target_roles: Mapped[Optional[JSONB]] = mapped_column(JSONB, nullable=True) 
+    target_roles: Mapped[Optional[JSONB]] = mapped_column(JSONB, nullable=True)
     solutions_featured: Mapped[Optional[JSONB]] = mapped_column(JSONB, nullable=True)
     status: Mapped[str] = mapped_column(String(255))  # TODO: Change to enum
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, 
-        default=datetime.now(tz= pytz.timezone("Europe/Athens"))
+        DateTime, default=datetime.now(tz=pytz.timezone("Europe/Athens"))
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, 
-        default=datetime.now(tz= pytz.timezone("Europe/Athens")), 
-        onupdate=datetime.now(tz= pytz.timezone("Europe/Athens"))
+        DateTime,
+        default=datetime.now(tz=pytz.timezone("Europe/Athens")),
+        onupdate=datetime.now(tz=pytz.timezone("Europe/Athens")),
     )
-    
-    
+
+
 class Interaction(Base):
     __tablename__ = "interactions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     prospect_id: Mapped[int] = mapped_column(ForeignKey("prospects.id"))
-    event_id: Mapped[Optional[int]] = mapped_column(ForeignKey("events.id"), nullable=True)
-    interaction_type: Mapped[Enum] = mapped_column(ENUM(InteractionType, name = "interaction_types"))  # TODO: Change to enum
+    event_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("events.id"), nullable=True
+    )
+    interaction_type: Mapped[Enum] = mapped_column(
+        ENUM(InteractionType, name="interaction_types")
+    )  # TODO: Change to enum
     interaction_date: Mapped[datetime] = mapped_column(DateTime)
     subject: Mapped[str] = mapped_column(String(255))
     content: Mapped[str] = mapped_column(Text)
-    sentiment: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)    
+    sentiment: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     outcome: Mapped[Optional[Text]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, 
-        default=datetime.now(tz= pytz.timezone("Europe/Athens"))
+        DateTime, default=datetime.now(tz=pytz.timezone("Europe/Athens"))
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, 
-        default=datetime.now(tz= pytz.timezone("Europe/Athens")), 
-        onupdate=datetime.now(tz= pytz.timezone("Europe/Athens"))
+        DateTime,
+        default=datetime.now(tz=pytz.timezone("Europe/Athens")),
+        onupdate=datetime.now(tz=pytz.timezone("Europe/Athens")),
     )
     # Many-to-one relationship with Prospect
     prospect: Mapped["Prospect"] = relationship("Prospect")
+
 
 class OutreachDraft(Base):
     __tablename__ = "outreach_drafts"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     prospect_id: Mapped[int] = mapped_column(ForeignKey("prospects.id"))
-    event_id: Mapped[Optional[int]] = mapped_column(ForeignKey("events.id"), nullable=True)
+    event_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("events.id"), nullable=True
+    )
     draft_type: Mapped[str] = mapped_column(String(255))  # TODO: Change to enum
     content: Mapped[str] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(255))  # TODO: Change to enum
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, 
-        default=datetime.now(tz= pytz.timezone("Europe/Athens"))
+        DateTime, default=datetime.now(tz=pytz.timezone("Europe/Athens"))
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, 
-        default=datetime.now(tz= pytz.timezone("Europe/Athens")), 
-        onupdate=datetime.now(tz= pytz.timezone("Europe/Athens"))
+        DateTime,
+        default=datetime.now(tz=pytz.timezone("Europe/Athens")),
+        onupdate=datetime.now(tz=pytz.timezone("Europe/Athens")),
     )
     # Many-to-one relationship with Prospect
     prospect: Mapped["Prospect"] = relationship("Prospect")
+
 
 class LLMUsageLog(Base):
     __tablename__ = "llm_usage_logs"
@@ -240,22 +272,23 @@ class LLMUsageLog(Base):
     latency_ms: Mapped[int] = mapped_column(Integer, default=0)
     cost: Mapped[float] = mapped_column(Float, default=0.0)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, 
-        default=datetime.now(tz= pytz.timezone("Europe/Athens"))
+        DateTime, default=datetime.now(tz=pytz.timezone("Europe/Athens"))
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, 
-        default=datetime.now(tz= pytz.timezone("Europe/Athens")), 
-        onupdate=datetime.now(tz= pytz.timezone("Europe/Athens"))
+        DateTime,
+        default=datetime.now(tz=pytz.timezone("Europe/Athens")),
+        onupdate=datetime.now(tz=pytz.timezone("Europe/Athens")),
     )
 
 
 # create_database() creates the database tables and initializes the Alembic version table
-# You should only need to run this once. 
+# You should only need to run this once.
 def create_database():
     from sqlalchemy import create_engine
 
-    engine = create_engine("postgresql://postgres:postgres@localhost:5432/sales_test", echo = True)
+    engine = create_engine(
+        "postgresql://postgres:postgres@localhost:5432/sales_test", echo=True
+    )
 
     # Enable pgvector extension
     with engine.connect() as conn:
@@ -267,19 +300,28 @@ def create_database():
     # version table, "stamping" it with the most recent rev:
     from alembic.config import Config
     from alembic import command
-    alembic_cfg = Config("alembic.ini") # run with uv run from project root, or change to absolute path
+
+    alembic_cfg = Config(
+        "alembic.ini"
+    )  # run with uv run from project root, or change to absolute path
     command.stamp(alembic_cfg, "head")
+
 
 def main():
     import argparse
+
     arg_parser = argparse.ArgumentParser(description="Database management script")
-    arg_parser.add_argument("command", choices=["create_database"], help="Command to execute")
+    arg_parser.add_argument(
+        "command", choices=["create_database"], help="Command to execute"
+    )
     args = arg_parser.parse_args()
 
     if args.command == "create_database":
         create_database()
     else:
-        print("Use'python database.py create_database' to create the database tables and initialize the Alembic version table")
+        print(
+            "Use'python database.py create_database' to create the database tables and initialize the Alembic version table"
+        )
 
 
 if __name__ == "__main__":

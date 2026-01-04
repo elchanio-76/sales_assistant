@@ -3,14 +3,17 @@
 ## 1. Project Overview
 
 ### 1.1 Purpose
+
 An AI-powered sales assistant that automates prospect research, AWS solution matching, and personalized outreach generation for enterprise account managers. The system leverages multi-agent workflows to enrich prospect data, identify relevant AWS solutions, and generate contextual sales communications.
 
 ### 1.2 Scope
+
 **Capstone Project Timeline:** 40-60 hours  
 **Target Version:** v1.0.0 (Capstone Submission)  
 **Deployment Model:** Hybrid (Local development, AWS ECS production-ready)
 
 ### 1.3 Key Capabilities
+
 - Prospect data import and enrichment
 - Automated company research and analysis
 - Two-tier AWS solution matching (vector search + MCP)
@@ -23,6 +26,7 @@ An AI-powered sales assistant that automates prospect research, AWS solution mat
 ## 2. Architecture
 
 ### 2.1 System Components
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                        Gradio UI                             │
@@ -39,70 +43,81 @@ An AI-powered sales assistant that automates prospect research, AWS solution mat
 │                                                               │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
 │  │Vector Service│  │Solution      │  │AWS MCP       │     │
-│  │              │  │Matcher       │  │Service       │     │
+│  │  (pgvector)  │  │Matcher       │  │Service       │     │
 │  └──────────────┘  └──────────────┘  └──────────────┘     │
-└────────┬─────────────────┬──────────────────┬──────────────┘
-         │                 │                  │
-         ▼                 ▼                  ▼
-┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-│  PostgreSQL  │  │    Qdrant    │  │External MCP  │
-│              │  │ Vector Store │  │  Servers     │
-└──────────────┘  └──────────────┘  └──────────────┘
+└────────┬──────────────────────────────────┬──────────────┘
+         │                                   │
+         ▼                                   ▼
+┌──────────────────────────────┐  ┌──────────────┐
+│      PostgreSQL 15+          │  │External MCP  │
+│  ┌────────────────────────┐  │  │  Servers     │
+│  │  Relational Data       │  │  └──────────────┘
+│  ├────────────────────────┤  │
+│  │  pgvector Extension    │  │
+│  │  (Vector Embeddings)   │  │
+│  └────────────────────────┘  │
+└──────────────────────────────┘
 ```
 
 ### 2.2 Technology Stack
 
 **Backend Framework:**
+
 - FastAPI (Python 3.11+)
 - Pydantic v2 (data validation)
 - SQLAlchemy 2.x (ORM and migrations)
 
 **Agent Orchestration:**
+
 - LangGraph (workflow orchestration)
 - LangChain providers (multi-model support)
 - LangSmith (agent debugging and tracing)
 
 **LLM Providers:**
+
 - Primary: OpenAI (GPT-4), Anthropic (Claude Sonnet 4.5)
 - Configurable via LangGraph provider abstraction
 
 **Data Storage:**
-- PostgreSQL 15+ (relational data)
-- Qdrant (vector embeddings)
+
+- PostgreSQL 15+ (relational data + vector embeddings via pgvector extension)
 
 **Vector Embeddings:**
+
 - sentence-transformers (`all-MiniLM-L6-v2`)
 
 **Frontend:**
+
 - Gradio (separate containerized service)
 
 **Infrastructure:**
+
 - Docker & Docker Compose (local dev)
 - AWS ECS (production deployment)
-- AWS RDS PostgreSQL (production database)
-- Qdrant Cloud (production vector store)
+- AWS RDS PostgreSQL 15+ with pgvector extension (production database)
 
 **Additional Services:**
+
 - AWS MCP servers (live AWS documentation and pricing)
 
 ### 2.3 Deployment Architecture
 
 **Local Development:**
+
 ```
 Docker Compose:
 ├── gradio-ui (container)
 ├── fastapi-backend (container)
-├── existing PostgreSQL (host service)
-└── existing Qdrant (host service)
+└── existing PostgreSQL 15+ with pgvector (host service)
 ```
 
 **AWS ECS Production:**
+
 ```
 ECS Cluster:
 ├── Gradio UI Service (Fargate task)
 ├── FastAPI Backend Service (Fargate task)
-├── RDS PostgreSQL (managed)
-├── Qdrant Cloud (managed)
+├── RDS PostgreSQL 15+ with pgvector (managed)
 └── AWS Secrets Manager (API keys, DB credentials)
 ```
 
@@ -113,6 +128,7 @@ ECS Cluster:
 ### 3.1 PostgreSQL Schema
 
 **Core Entities:**
+
 ```python
 class Prospect:
     id: int (PK)
@@ -209,6 +225,7 @@ class LLMUsageLog:
 ```
 
 **Enums:**
+
 ```python
 class ProspectStatus(str, Enum):
     NEW = "new"
@@ -226,59 +243,89 @@ class InteractionType(str, Enum):
     LINKEDIN = "linkedin"
 ```
 
-### 3.2 Qdrant Vector Store Schema
+### 3.2 pgvector Vector Store Schema
 
-**Collections:**
+**PostgreSQL Tables with Vector Columns:**
 
-**1. aws_solutions**
-- Vector dimension: 384 (all-MiniLM-L6-v2)
-- Distance metric: Cosine
-- Payload schema:
-```python
-{
-    "solution_id": int,
-    "name": str,
-    "category": str,
-    "description": str,
-    "use_cases": list[str],
-    "industries": list[str],
-    "keywords": list[str],
-    "pricing_model": str,
-    "last_updated": str (ISO datetime)
-}
+**1. aws_solution_vectors**
+
+```sql
+CREATE TABLE aws_solution_vectors (
+    id SERIAL PRIMARY KEY,
+    solution_id INTEGER REFERENCES awsolution(id) ON DELETE CASCADE,
+    embedding vector(384),  -- all-MiniLM-L6-v2 dimension
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Index for cosine distance similarity search
+CREATE INDEX ON aws_solution_vectors
+USING ivfflat (embedding vector_cosine_ops)
+WITH (lists = 100);
 ```
 
-**2. reference_architectures**
-- Vector dimension: 384
-- Distance metric: Cosine
-- Payload schema:
-```python
-{
-    "title": str,
-    "solutions_used": list[str],
-    "industry": str,
-    "description": str,
-    "compliance_frameworks": list[str],
-    "diagram_url": str,
-    "doc_url": str
-}
+**2. reference_architecture_vectors**
+
+```sql
+CREATE TABLE reference_architecture_vectors (
+    id SERIAL PRIMARY KEY,
+    title TEXT NOT NULL,
+    solutions_used JSONB,
+    industry TEXT,
+    description TEXT,
+    compliance_frameworks JSONB,
+    diagram_url TEXT,
+    doc_url TEXT,
+    embedding vector(384),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Index for cosine distance similarity search
+CREATE INDEX ON reference_architecture_vectors
+USING ivfflat (embedding vector_cosine_ops)
+WITH (lists = 50);
 ```
 
-**3. past_communications**
-- Vector dimension: 384
-- Distance metric: Cosine
-- Payload schema:
-```python
-{
-    "prospect_id": int,
-    "company": str,
-    "subject": str,
-    "content": str,
-    "solutions_mentioned": list[str],
-    "outcome": str,
-    "date": str (ISO datetime)
-}
+**3. communication_vectors**
+
+```sql
+CREATE TABLE communication_vectors (
+    id SERIAL PRIMARY KEY,
+    prospect_id INTEGER REFERENCES prospect(id) ON DELETE CASCADE,
+    company TEXT,
+    subject TEXT,
+    content TEXT,
+    solutions_mentioned JSONB,
+    outcome TEXT,
+    communication_date TIMESTAMP,
+    embedding vector(384),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Index for cosine distance similarity search
+CREATE INDEX ON communication_vectors
+USING ivfflat (embedding vector_cosine_ops)
+WITH (lists = 100);
 ```
+
+**Vector Search Query Pattern:**
+
+```sql
+-- Find similar AWS solutions (cosine distance)
+SELECT
+    s.id, s.name, s.description,
+    v.embedding <=> '[query_embedding]'::vector AS distance
+FROM aws_solution_vectors v
+JOIN awsolution s ON s.id = v.solution_id
+ORDER BY v.embedding <=> '[query_embedding]'::vector
+LIMIT 10;
+```
+
+**Distance Operators:**
+
+- `<->` : L2 distance (Euclidean)
+- `<#>` : Inner product
+- `<=>` : Cosine distance (recommended for normalized embeddings)
 
 ---
 
@@ -289,7 +336,8 @@ class InteractionType(str, Enum):
 **Base URL:** `/api/v1`
 
 **Prospects:**
-```
+
+```bash
 POST   /prospects
 GET    /prospects
 GET    /prospects/{prospect_id}
@@ -299,13 +347,15 @@ GET    /prospects/import/template
 ```
 
 **Research:**
-```
+
+```bash
 POST   /prospects/{prospect_id}/research
 GET    /prospects/{prospect_id}/research
 GET    /prospects/{prospect_id}/research/latest
 ```
 
 **Outreach:**
+
 ```
 POST   /prospects/{prospect_id}/outreach
 GET    /prospects/{prospect_id}/outreach
@@ -313,6 +363,7 @@ PATCH  /outreach/{draft_id}
 ```
 
 **Events:**
+
 ```
 POST   /events
 GET    /events
@@ -321,6 +372,7 @@ POST   /events/{event_id}/match-prospects
 ```
 
 **AWS Solutions:**
+
 ```
 GET    /solutions
 POST   /solutions
@@ -328,12 +380,14 @@ GET    /solutions/search
 ```
 
 **Interactions:**
+
 ```
 POST   /prospects/{prospect_id}/interactions
 GET    /prospects/{prospect_id}/interactions
 ```
 
 **System:**
+
 ```
 GET    /health
 GET    /metrics/llm-usage
@@ -348,6 +402,7 @@ See Section 3.1 for Pydantic schemas corresponding to each endpoint.
 FastAPI auto-generates OpenAPI 3.0 schema at `/docs` (Swagger UI) and `/redoc`.
 
 **Curl Test Scripts:**
+
 - Generated from OpenAPI schema using LLM
 - Stored in `/tests/api/curl_tests/`
 - Regenerated on schema changes
@@ -361,6 +416,7 @@ FastAPI auto-generates OpenAPI 3.0 schema at `/docs` (Swagger UI) and `/redoc`.
 **Purpose:** Enrich prospect data, analyze company, match AWS solutions
 
 **State Schema:**
+
 ```python
 class ResearchState(TypedDict):
     prospect_id: int
@@ -381,6 +437,7 @@ class ResearchState(TypedDict):
 ```
 
 **Node Sequence:**
+
 1. `gather_context` - Load prospect/company data from DB
 2. `research_company` - Web search for company intel
 3. `analyze_tech_stack` - Infer technology stack and opportunities
@@ -389,11 +446,13 @@ class ResearchState(TypedDict):
 6. `synthesize_research` - Generate executive summary
 
 **Error Handling:**
+
 - LLM API failures: exponential backoff retry (3 attempts)
 - MCP failures: graceful degradation to vector-only results
 - All errors logged with full context
 
 **Persistence:**
+
 - Final state saved to `ProspectResearch` table
 - Intermediate states logged to JSON file for debugging
 
@@ -402,6 +461,7 @@ class ResearchState(TypedDict):
 **Purpose:** Generate personalized sales emails based on research
 
 **State Schema:**
+
 ```python
 class OutreachState(TypedDict):
     prospect_id: int
@@ -420,6 +480,7 @@ class OutreachState(TypedDict):
 ```
 
 **Node Sequence:**
+
 1. `load_context` - Load prospect, research, event data
 2. `analyze_similar_wins` - Vector search for successful past emails
 3. `plan_email_strategy` - Determine approach, tone, solutions to highlight
@@ -428,10 +489,12 @@ class OutreachState(TypedDict):
 6. `refine_draft` - Grammar check and tone refinement
 
 **Error Handling:**
+
 - Same retry logic as Research workflow
 - If similar_communications empty, proceed without historical patterns
 
 **Persistence:**
+
 - Draft saved to `OutreachDraft` table
 - Can be edited via PATCH endpoint before marking as sent
 
@@ -440,6 +503,7 @@ class OutreachState(TypedDict):
 **Purpose:** Identify relevant prospects for events, generate invitations
 
 **State Schema:**
+
 ```python
 class EventMatchingState(TypedDict):
     event_id: int
@@ -452,6 +516,7 @@ class EventMatchingState(TypedDict):
 ```
 
 **Node Sequence:**
+
 1. `load_event` - Fetch event details
 2. `find_candidates` - SQL + vector search for matching prospects
 3. `score_relevance` - LLM scores each candidate (0-100)
@@ -459,14 +524,17 @@ class EventMatchingState(TypedDict):
 5. `generate_invitations` - Call Outreach workflow for each match
 
 **Error Handling:**
+
 - Same retry logic as other workflows
 - If scoring fails for a prospect, skip and continue
 
 **Concurrency Control:**
+
 - Max 5 concurrent LLM calls during scoring phase
 - Configurable via `MAX_CONCURRENT_LLM_CALLS` env var
 
 **Persistence:**
+
 - Invitation drafts saved to `OutreachDraft` table with `event_id` reference
 
 ### 5.4 Reference Architecture Search Agent
@@ -474,6 +542,7 @@ class EventMatchingState(TypedDict):
 **Purpose:** Search AWS reference architectures on-demand (not pre-indexed)
 
 **Implementation:**
+
 - Standalone agent (not a full workflow)
 - Triggered by user query or automatically during research
 - Uses web search + AWS documentation sites
@@ -489,12 +558,14 @@ class EventMatchingState(TypedDict):
 **Purpose:** Sub-second retrieval of relevant AWS solutions
 
 **Process:**
+
 1. Embed prospect context (industry, pain points, tech stack)
 2. Search `aws_solutions` collection (top 10 candidates)
 3. Search `reference_architectures` collection (top 3)
 4. Search `past_communications` for similar successful interactions
 
 **Filters:**
+
 - Industry matching (exact or "all")
 - Optional: company size, specific keywords
 
@@ -505,6 +576,7 @@ class EventMatchingState(TypedDict):
 **Purpose:** Enrich top candidates with current information
 
 **Process:**
+
 1. Take top 5 solutions from Tier 1
 2. Query AWS MCP servers for:
    - Latest documentation and features
@@ -513,21 +585,25 @@ class EventMatchingState(TypedDict):
 3. Return enriched solution data
 
 **MCP Servers Used:**
+
 - AWS Documentation MCP (hypothetical: `https://mcp.aws.amazon.com/sse`)
 - Pricing Calculator MCP
 - (Note: If official AWS MCP servers unavailable, fallback to vector-only or build custom wrapper)
 
 **Fallback Strategy:**
+
 - If MCP call fails/times out: use Tier 1 data only
 - If MCP unavailable: entire system degrades to vector-only (still functional)
 
 **Caching:**
+
 - MCP responses cached in-memory for 24 hours (per solution)
 - Cache key: `solution_name:usage_pattern_hash`
 
 ### 6.3 Integration
 
 Located in `services/solution_matcher.py`:
+
 ```python
 class SolutionMatcher:
     async def match_solutions_for_prospect(
@@ -557,6 +633,7 @@ class SolutionMatcher:
 **Tool:** SQLAlchemy Alembic
 
 **Migration Commands:**
+
 ```bash
 # Generate migration
 alembic revision --autogenerate -m "description"
@@ -573,21 +650,25 @@ alembic downgrade -1
 ### 7.2 Seed Data Strategy
 
 **AWS Solutions:**
+
 - Generate CSV with LLM (solution descriptions, use cases, keywords)
 - Ingest via Python script: `scripts/seed_aws_solutions.py`
-- Automatically embed and store in Qdrant
+- Automatically embed and store in pgvector tables
 
 **Test Prospects:**
+
 - Generate realistic CSV with LLM (names, companies, industries)
 - Import via `/api/prospects/import/csv` endpoint
 - Reflects production workflow
 
 **Reference Architectures:**
+
 - NOT pre-ingested (too much effort)
 - Use Reference Architecture Search Agent on-demand
 - Agent searches AWS architecture center in real-time
 
 **Seed Data Files:**
+
 - Located in `/data/seeds/`
 - Versioned with git (not ignored)
 - Scripts in `/scripts/seed_*.py`
@@ -595,23 +676,27 @@ alembic downgrade -1
 ### 7.3 Vector Store Management
 
 **Initialization:**
+
 ```python
-# scripts/init_qdrant.py
-- Create collections
-- Set up indexes
-- Configure distance metrics
+# scripts/init_pgvector.py
+- Enable pgvector extension
+- Create vector tables
+- Set up ivfflat indexes
 ```
 
 **Population:**
+
 ```python
 # scripts/populate_vectors.py
 - Read AWS solutions from PostgreSQL
-- Generate embeddings
-- Upsert to Qdrant collections
+- Generate embeddings using sentence-transformers
+- Insert into vector tables (aws_solution_vectors, etc.)
 ```
 
 **Maintenance:**
+
 - Periodic re-embedding if solution descriptions change
+- Rebuild ivfflat indexes after bulk updates
 - Manual trigger via admin endpoint (future enhancement)
 
 ---
@@ -621,13 +706,10 @@ alembic downgrade -1
 ### 8.1 Environment Variables
 
 **Local Development (`.env`):**
-```bash
-# Database
-DATABASE_URL=postgresql://user:pass@localhost:5432/sales_assistant
 
-# Qdrant
-QDRANT_URL=http://localhost:6333
-QDRANT_API_KEY=  # optional for local
+```bash
+# Database (PostgreSQL 15+ with pgvector extension)
+DATABASE_URL=postgresql://user:pass@localhost:5432/sales_assistant
 
 # LLM Providers
 OPENAI_API_KEY=sk-...
@@ -650,6 +732,7 @@ AWS_SECRETS_MANAGER_NAME=sales-assistant/prod
 ```
 
 **AWS ECS (Secrets Manager):**
+
 - All secrets stored in AWS Secrets Manager
 - Retrieved on container startup
 - Secret name format: `sales-assistant/{environment}/{key}`
@@ -657,14 +740,13 @@ AWS_SECRETS_MANAGER_NAME=sales-assistant/prod
 ### 8.2 Configuration Files
 
 **`config/settings.py`:**
+
 ```python
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     database_url: str
-    qdrant_url: str
-    qdrant_api_key: Optional[str] = None
-    
+
     openai_api_key: str
     anthropic_api_key: str
     
@@ -692,6 +774,7 @@ class Settings(BaseSettings):
 **Format:** Structured JSON logs
 
 **Schema:**
+
 ```json
 {
     "timestamp": "2025-01-15T10:30:45.123Z",
@@ -709,10 +792,12 @@ class Settings(BaseSettings):
 ```
 
 **Destinations:**
+
 - Local: `/logs/app.log` (rotated daily)
 - ECS: CloudWatch Logs (future enhancement)
 
 **Log Levels:**
+
 - ERROR: Unrecoverable failures
 - WARNING: Recoverable issues (retry triggered, degraded mode)
 - INFO: Workflow milestones, API requests
@@ -723,6 +808,7 @@ class Settings(BaseSettings):
 **Tool:** LangSmith
 
 **Tracked Metrics:**
+
 - Prompt templates used
 - Input/output tokens per call
 - Latency per LLM request
@@ -730,10 +816,12 @@ class Settings(BaseSettings):
 - Error rates by workflow/node
 
 **Access:**
-- Dashboard: https://smith.langchain.com
+
+- Dashboard: <https://smith.langchain.com>
 - Project: `sales-assistant-{environment}`
 
 **Cost Tracking:**
+
 ```python
 # Logged to LLMUsageLog table after each call
 {
@@ -750,6 +838,7 @@ class Settings(BaseSettings):
 ```
 
 **Cost Aggregation Endpoint:**
+
 ```
 GET /api/metrics/llm-usage?start_date=2025-01-01&end_date=2025-01-31
 ```
@@ -757,6 +846,7 @@ GET /api/metrics/llm-usage?start_date=2025-01-01&end_date=2025-01-31
 ### 9.3 Performance Metrics
 
 **Tracked via Middleware:**
+
 - API endpoint latency (p50, p95, p99)
 - Request/response sizes
 - Error rates by endpoint
@@ -773,6 +863,7 @@ GET /api/metrics/llm-usage?start_date=2025-01-01&end_date=2025-01-31
 **Tool:** pytest
 
 **Test Structure:**
+
 ```
 tests/
 ├── unit/
@@ -798,6 +889,7 @@ tests/
 ### 10.2 Test Coverage
 
 **Unit Tests (Required):**
+
 - Vector service (search, embedding, similarity)
 - Solution matcher (tier 1 + tier 2)
 - Database operations (CRUD, queries)
@@ -805,12 +897,14 @@ tests/
 - Helper utilities
 
 **API Tests (Required):**
+
 - All endpoints (happy path)
 - Error cases (400, 404, 500)
 - Authentication (future)
 - Request validation
 
 **Integration Tests (Optional/Selective):**
+
 - Research workflow (end-to-end with mocked LLM)
 - Outreach workflow (with mocked vector store)
 - Event matching (with mocked DB + LLM)
@@ -821,6 +915,7 @@ tests/
 ### 10.3 Test Execution
 
 **Commands:**
+
 ```bash
 # All tests
 pytest
@@ -843,15 +938,18 @@ pytest tests/unit/services/test_vector_service.py -v
 ### 10.4 Curl Test Scripts
 
 **Generation Strategy:**
+
 - Use LLM to generate curl scripts from OpenAPI schema
 - Stored in `tests/api/curl_tests/`
 - Organized by endpoint group (prospects, research, outreach, etc.)
 
 **Regeneration Trigger:**
+
 - Manual: `scripts/generate_curl_tests.py`
 - Prompt LLM with OpenAPI JSON + example request/response
 
 **Example Structure:**
+
 ```bash
 # tests/api/curl_tests/prospects.sh
 
@@ -877,12 +975,13 @@ curl http://localhost:8000/api/v1/prospects/1
 ### 11.1 Local Development Setup
 
 **Prerequisites:**
+
 - Docker & Docker Compose
 - Python 3.11+
-- Existing PostgreSQL service (port 5432)
-- Existing Qdrant service (port 6333)
+- Existing PostgreSQL 15+ service with pgvector extension (port 5432)
 
 **Steps:**
+
 ```bash
 # 1. Clone repository
 git clone <repo-url>
@@ -899,23 +998,22 @@ pip install -r requirements.txt
 cp .env.example .env
 # Edit .env with your API keys
 
-# 5. Initialize database
+# 5. Initialize database and pgvector
 alembic upgrade head
+python scripts/init_pgvector.py
 python scripts/seed_aws_solutions.py
-
-# 6. Initialize Qdrant
-python scripts/init_qdrant.py
 python scripts/populate_vectors.py
 
-# 7. Start services
+# 6. Start services
 docker-compose up -d
 
-# 8. Verify
+# 7. Verify
 curl http://localhost:8000/health
 curl http://localhost:7860  # Gradio UI
 ```
 
 **Docker Compose:**
+
 ```yaml
 version: '3.8'
 
@@ -926,7 +1024,6 @@ services:
       - "8000:8000"
     environment:
       - DATABASE_URL=postgresql://user:pass@host.docker.internal:5432/sales_assistant
-      - QDRANT_URL=http://host.docker.internal:6333
     env_file:
       - .env
     depends_on:
@@ -945,15 +1042,16 @@ services:
 ### 11.2 AWS ECS Deployment
 
 **Architecture:**
+
 ```
-ALB → ECS Service (Backend) → RDS PostgreSQL
-                            → Qdrant Cloud
+ALB → ECS Service (Backend) → RDS PostgreSQL 15+ with pgvector
      → ECS Service (Gradio UI)
 ```
 
 **ECS Task Definitions:**
 
 **Backend Task:**
+
 ```json
 {
   "family": "sales-assistant-backend",
@@ -985,6 +1083,7 @@ ALB → ECS Service (Backend) → RDS PostgreSQL
 **Gradio UI Task:** (Similar structure, port 7860)
 
 **Deployment Steps:**
+
 ```bash
 # 1. Build and push Docker images
 docker build -t sales-assistant-backend:v1.0.0 ./backend
@@ -1009,6 +1108,7 @@ aws ecs run-task \
 ```
 
 **Infrastructure (Terraform or Manual):**
+
 - VPC with public/private subnets
 - RDS PostgreSQL (db.t3.medium)
 - Application Load Balancer
@@ -1023,24 +1123,29 @@ aws ecs run-task \
 ### 12.1 API Security
 
 **Authentication/Authorization:**
+
 - MVP: None (single-user assumption)
 - Future: OAuth2 with JWT tokens
 
 **Input Validation:**
+
 - Pydantic models enforce schema
 - SQLAlchemy prevents SQL injection
 - File uploads: whitelist CSV/TXT/DOCX extensions, size limits (10MB)
 
 **Rate Limiting:**
+
 - Future: API Gateway throttling (1000 req/min)
 
 ### 12.2 Secrets Management
 
 **Local:**
+
 - `.env` file (git-ignored)
 - Never commit API keys
 
 **Production:**
+
 - AWS Secrets Manager
 - IAM roles for ECS tasks (no hardcoded credentials)
 - Secrets rotation policy (90 days)
@@ -1048,11 +1153,13 @@ aws ecs run-task \
 ### 12.3 Data Privacy
 
 **PII Handling:**
+
 - Prospect data contains names, titles, LinkedIn URLs
 - No email addresses or phone numbers stored (unless user imports)
 - GDPR compliance: not addressed in MVP (future concern)
 
 **LLM Data:**
+
 - Prompts may contain PII sent to OpenAI/Anthropic
 - Review provider terms of service
 - Consider data retention policies
@@ -1066,6 +1173,7 @@ aws ecs run-task \
 **Strategy:** Exponential backoff retry
 
 **Implementation:**
+
 ```python
 from tenacity import retry, stop_after_attempt, wait_exponential
 
@@ -1080,28 +1188,33 @@ async def call_llm(prompt: str) -> str:
 ```
 
 **Logging:**
+
 - Log each attempt with context
 - Log final failure with full traceback
 
 ### 13.2 Two-Tier Degradation
 
 **MCP Failures:**
+
 - If Tier 2 (MCP) fails, return Tier 1 (vector) results only
 - Add warning flag in response: `"mcp_unavailable": true`
 - Log degraded operation
 
 **Vector Store Failures:**
-- If Qdrant unreachable, workflows fail gracefully
-- Return error to API caller with clear message
-- Alternative: fallback to PostgreSQL full-text search (future)
+
+- Vector search failures handled gracefully (pgvector is within PostgreSQL)
+- If vector index unavailable, fallback to PostgreSQL full-text search
+- Return error to API caller with clear message if fallback also fails
 
 ### 13.3 Database Failures
 
 **Connection Pooling:**
+
 - SQLAlchemy pool size: 5-20
 - Timeouts: 30 seconds
 
 **Retry Logic:**
+
 - Transient errors: retry with backoff
 - Persistent errors: fail immediately
 
@@ -1112,23 +1225,27 @@ async def call_llm(prompt: str) -> str:
 ### 14.1 Concurrency Control
 
 **LLM Calls:**
+
 - Max concurrent calls: 5 (configurable)
 - Semaphore in event matching workflow
 - Prevents rate limit exhaustion
 
 **Background Tasks:**
+
 - FastAPI BackgroundTasks for long-running workflows
 - Return job ID immediately, poll for status
 
 ### 14.2 Caching
 
 **MCP Responses:**
+
 - In-memory cache (TTL: 24 hours)
 - Cache key: `solution_name:usage_pattern_hash`
 - Shared across requests
 
 **Vector Embeddings:**
-- AWS solutions pre-embedded in Qdrant (acts as cache)
+
+- AWS solutions pre-embedded in pgvector tables (acts as cache)
 - Regenerate only on data updates
 
 **Future:** Redis for distributed caching (ECS multi-instance)
@@ -1136,6 +1253,7 @@ async def call_llm(prompt: str) -> str:
 ### 14.3 Database Optimization
 
 **Indexes:**
+
 - `Prospect.linkedin_url` (unique)
 - `Prospect.status`
 - `ProspectResearch.prospect_id`
@@ -1143,6 +1261,7 @@ async def call_llm(prompt: str) -> str:
 - `LLMUsageLog.created_at` (for time-range queries)
 
 **Query Optimization:**
+
 - Use SQLAlchemy lazy loading strategically
 - Paginate large result sets (default: 50 per page)
 
@@ -1196,6 +1315,7 @@ async def call_llm(prompt: str) -> str:
 ### 15.3 UI Framework
 
 **Implementation:**
+
 ```python
 import gradio as gr
 import requests
@@ -1246,6 +1366,7 @@ app.launch(server_name="0.0.0.0", server_port=7860)
 ---
 
 ## 16. Project Structure
+
 ```
 sales-assistant/
 ├── README.md
@@ -1298,7 +1419,7 @@ sales-assistant/
 │
 ├── scripts/
 │   ├── seed_aws_solutions.py
-│   ├── init_qdrant.py
+│   ├── init_pgvector.py
 │   ├── populate_vectors.py
 │   └── generate_curl_tests.py
 │
@@ -1329,11 +1450,13 @@ sales-assistant/
 **Repository:** Git (GitHub/GitLab)
 
 **Branching Strategy:**
+
 - `main` branch for stable code
 - Feature branches as needed: `feature/research-workflow`
 - Capstone submission tagged as `v1.0.0`
 
 **Commit Messages:**
+
 - Use conventional commits (optional): `feat:`, `fix:`, `docs:`
 
 ### 17.2 Development Cycle
@@ -1365,11 +1488,13 @@ sales-assistant/
 ### 17.3 Documentation Strategy
 
 **Synchronization:**
+
 - Code changes → Doc AI agent generates updates
 - SPECS.md, README.md stay in sync with implementation
 - OpenAPI schema auto-generated by FastAPI
 
 **Doc AI Agent:**
+
 - Prompt: "Update documentation to reflect code changes in <file>"
 - Agent reads code, compares to docs, suggests edits
 - Human review before committing
@@ -1379,18 +1504,21 @@ sales-assistant/
 ## 18. Future Enhancements (Post-Capstone)
 
 **Phase 2 (v1.1.0):**
+
 - Analytics dashboard (prospect pipeline, conversion rates)
 - Natural language query interface
 - Email sending integration (AWS SES)
 - A/B testing for outreach strategies
 
 **Phase 3 (v1.2.0):**
+
 - Authentication/authorization (multi-user)
 - CRM integration (Salesforce API)
 - Lambda refactoring for cost optimization
 - Workflow resumption after failures
 
 **Phase 4 (v2.0.0):**
+
 - Real-time collaboration (WebSocket updates)
 - Advanced analytics (predictive lead scoring)
 - Mobile app (React Native)
@@ -1401,6 +1529,7 @@ sales-assistant/
 ## 19. Success Criteria (Capstone)
 
 **Functional Requirements:**
+
 - ✅ Import prospects via CSV
 - ✅ Research workflow generates actionable summaries
 - ✅ Outreach workflow produces personalized emails
@@ -1410,6 +1539,7 @@ sales-assistant/
 - ✅ Reference architecture search agent functional
 
 **Technical Requirements:**
+
 - ✅ Deployable on AWS ECS (infrastructure documented)
 - ✅ Unit tests (70%+ coverage on key services)
 - ✅ API tests (50%+ coverage)
@@ -1418,12 +1548,14 @@ sales-assistant/
 - ✅ Cost tracking (LLM usage logged)
 
 **Documentation Requirements:**
+
 - ✅ SPECS.md (this document)
 - ✅ README.md (setup instructions, usage examples)
 - ✅ API documentation (OpenAPI/Swagger)
 - ✅ Code comments and docstrings
 
 **Deliverables:**
+
 - Git repository with tagged v1.0.0 release
 - Demo video (5-10 minutes)
 - Capstone presentation slides
@@ -1438,7 +1570,7 @@ sales-assistant/
 |------|--------|------------|
 | AWS MCP servers unavailable | Medium | Fallback to vector-only, document workaround |
 | LLM rate limits exceeded | High | Concurrency control, backoff retry, cost alerts |
-| Qdrant performance issues | Medium | Optimize collection config, consider alternatives |
+| pgvector performance issues | Low | Optimize ivfflat indexes, adjust lists parameter |
 | LangGraph learning curve | Medium | Start simple, iterate, use LangSmith debugging |
 | Time overrun (>60 hours) | High | Prioritize core workflows, defer UI polish |
 
@@ -1453,6 +1585,7 @@ sales-assistant/
 ### 20.3 Timeline Risk
 
 **Critical Path:**
+
 1. Database setup + migrations (4 hours)
 2. Research workflow (12 hours)
 3. Outreach workflow (8 hours)
@@ -1476,7 +1609,7 @@ sales-assistant/
 - **LangSmith:** Observability platform for LangChain/LangGraph applications
 - **ECS:** Amazon Elastic Container Service - managed container orchestration
 - **RDS:** Amazon Relational Database Service - managed PostgreSQL
-- **Qdrant:** Open-source vector database for semantic search
+- **pgvector:** PostgreSQL extension for vector similarity search
 - **FastAPI:** Modern Python web framework for building APIs
 - **Gradio:** Python library for building ML/AI web interfaces
 - **Alembic:** Database migration tool for SQLAlchemy
@@ -1486,16 +1619,20 @@ sales-assistant/
 
 ## 22. References
 
-- LangGraph Documentation: https://langchain-ai.github.io/langgraph/
-- LangSmith: https://smith.langchain.com
-- FastAPI: https://fastapi.tiangolo.com
-- Qdrant: https://qdrant.tech/documentation/
-- AWS ECS: https://docs.aws.amazon.com/ecs/
-- Gradio: https://gradio.app/docs/
+- LangGraph Documentation: <https://langchain-ai.github.io/langgraph/>
+- LangSmith: <https://smith.langchain.com>
+- FastAPI: <https://fastapi.tiangolo.com>
+- pgvector: <https://github.com/pgvector/pgvector>
+- AWS ECS: <https://docs.aws.amazon.com/ecs/>
+- Gradio: <https://gradio.app/docs/>
 
 ---
 
-**Document Version:** 0.0.1  
-**Last Updated:** 2025-12-29  
-**Author:** Lefteris (with Claude assistance)  
+**Document Version:** 0.1.0
+**Last Updated:** 2025-12-31
+**Author:** Lefteris (with Claude assistance)
 **Status:** Approved for Implementation
+**Changelog:**
+
+- v0.1.0 (2025-12-31): Migrated from Qdrant to pgvector for vector storage
+- v0.0.1 (2025-12-29): Initial version
