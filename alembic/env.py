@@ -3,7 +3,7 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 import alembic_postgresql_enum
-
+from pgvector.sqlalchemy import Vector
 
 from alembic import context
 
@@ -23,12 +23,22 @@ print(f"sqlalchemy.url: {url}")
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 from app.models.database import Base
+
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
+
+
+# Generate pgvector types properly
+def render_item(type_, obj, autogen_context):
+    """Render pgvector types properly."""
+    if type_ == "type" and isinstance(obj, Vector):
+        autogen_context.imports.add("from pgvector.sqlalchemy import Vector")
+        return f"Vector({obj.dim})"
+    return False
 
 
 def run_migrations_offline() -> None:
@@ -71,7 +81,9 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection,
+            target_metadata=target_metadata,
+            render_item=render_item,
         )
 
         with context.begin_transaction():

@@ -1,6 +1,10 @@
 from pydantic_settings import BaseSettings
 from pydantic_settings import SettingsConfigDict
+from enum import Enum
 
+class VectorTables(Enum):
+    SOLUTIONS = "solution_vectors" 
+    INTERACTIONS = "interaction_vectors"
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(

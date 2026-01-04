@@ -51,7 +51,7 @@
 - [x] Define InteractionType enum
 - [x] Define PricingModels enum
 - [x] Add foreign key relationships (ProspectResearch → Prospect, etc.)
-- [ ] Add indexes per spec section 14.3
+- [x] Add indexes per spec section 14.3
 - [ ] Test relationship loading
 
 ### 2.3 Alembic Setup and Initial Migration
@@ -88,25 +88,24 @@
 
 ### 3.1 pgvector Initialization
 
-- [ ] Create scripts/init_pgvector.py
+- [x] Create scripts/init_pgvector.py -> Add into create_database
 - [x] Enable pgvector extension in PostgreSQL
-- [ ] Create aws_solution_vectors table (dimension=384, ivfflat index)
-- [ ] Create reference_architecture_vectors table
-- [ ] Create communication_vectors table
-- [ ] Add error handling for existing tables
-- [ ] Test script execution against local PostgreSQL
+- [x] Create solution_vectors table (dimension=384, ivfflat index)
+- [x] Create interaction_vectors table
+- [x] Add error handling for existing tables
+- [x] Test script execution against local PostgreSQL
+- [x] Add alembic upgrade for vector tables
 - [ ] Document pgvector setup in README
 
 ### 3.2 Vector Service - Basic Operations
 
-- [ ] Create app/services/vector_service.py
-- [ ] Implement embedding generation using sentence-transformers (all-MiniLM-L6-v2)
-- [ ] Implement vector insert for aws_solution_vectors table
-- [ ] Implement vector insert for reference_architecture_vectors table
-- [ ] Implement vector insert for communication_vectors table
-- [ ] Add database session management
-- [ ] Test embedding generation (dimension check)
-- [ ] Write unit tests (tests/unit/services/test_vector_service.py)
+- [x] Create app/services/vector_service.py
+- [x] Implement embedding generation using sentence-transformers (all-MiniLM-L12-v2)
+- [x] Implement vector CRUD Operations for aws_solution_vectors table
+- [x] Implement vector CRUD Operations for communication_vectors table
+- [x] Add database session management
+- [x] Test embedding generation (dimension check)
+- [x] Write unit tests (tests/unit/services/test_vector_service.py)
 
 ### 3.3 Vector Service - Search Operations
 
