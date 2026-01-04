@@ -1,12 +1,38 @@
-from .database import Base, \
-    ProspectStatus, PricingModels, InteractionType, \
-    Prospect, Interaction, Company, Industry, Solution, ProspectResearch, \
-    OutreachDraft, Event, LLMUsageLog, IndustrySolution
+from .database import (
+    Base,
+    ProspectStatus,
+    PricingModels,
+    InteractionType,
+    Prospect,
+    Interaction,
+    Company,
+    Industry,
+    Solution,
+    ProspectResearch,
+    OutreachDraft,
+    Event,
+    LLMUsageLog,
+    IndustrySolution,
+    SolutionVector,
+    InteractionVector,
+)
 
 __all__ = [
     "Base",
-    "ProspectStatus", "PricingModels", "InteractionType",
-    "Prospect", "Interaction", "Company", "Industry", "Solution",
-    "ProspectResearch", "OutreachDraft", "Event", "LLMUsageLog", "IndustrySolution"
+    "ProspectStatus",
+    "PricingModels",
+    "InteractionType",
+    "Prospect",
+    "Interaction",
+    "Company",
+    "Industry",
+    "Solution",
+    "ProspectResearch",
+    "OutreachDraft",
+    "Event",
+    "LLMUsageLog",
+    "IndustrySolution",
+    "SolutionVector",
+    "InteractionVector",
 ]
 

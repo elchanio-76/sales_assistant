@@ -1,5 +1,5 @@
 from app.models import database as db
-
+from datetime import datetime
 from sqlalchemy import create_engine, exc
 from sqlalchemy.orm import sessionmaker, Session
 import logging
@@ -772,6 +772,33 @@ def get_interactions_by_type(
             return interactions
         except exc.SQLAlchemyError as e:
             logger.error(f"Error fetching interactions by type: {e}")
+            return []
+
+
+def get_interactions_by_date(
+    start_date: datetime, end_date: datetime
+) -> list[db.Interaction]:
+    """
+    Retrieve interactions within a specific date range.
+
+    Args:
+        start_date: Start date of the range
+        end_date: End date of the range
+
+    Returns:
+        List of Interaction objects within the date range
+    """
+    with get_db_session() as session:
+        try:
+            interactions = (
+                session.query(db.Interaction)
+                .filter(db.Interaction.interaction_date >= start_date)
+                .filter(db.Interaction.interaction_date <= end_date)
+                .all()
+            )
+            return interactions
+        except exc.SQLAlchemyError as e:
+            logger.error(f"Error fetching interactions by date: {e}")
             return []
 
 

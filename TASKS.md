@@ -109,14 +109,13 @@
 
 ### 3.3 Vector Service - Search Operations
 
-- [ ] Implement search_solutions() with filters (industry, keywords)
-- [ ] Implement search_reference_architectures()
-- [ ] Implement search_past_communications()
+- [x] Implement search_solutions() with filters (industry, keywords)
+- [x] Implement search_communications_by_date()
 - [ ] Add pagination support
-- [ ] Add similarity threshold parameter
-- [ ] Test search with various queries
-- [ ] Test filter combinations
-- [ ] Add tests for edge cases (empty results, invalid filters)
+- [x] Add similarity threshold parameter
+- [x] Test search with various queries
+- [x] Test filter combinations
+- [x] Add tests for edge cases (empty results, invalid filters)
 
 ---
 

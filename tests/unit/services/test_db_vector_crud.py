@@ -760,5 +760,445 @@ class TestVectorSearchText:
             assert isinstance(results, list)
 
 
+# ============================================================================
+# Tests for Filtered Vector Search Operations
+# ============================================================================
+
+
+class TestSearchSolutionWithFilters:
+    """Test suite for search_solution_with_filters function."""
+
+    @pytest.fixture
+    def mock_get_embedding(self, monkeypatch, sample_embedding):
+        """Mock the get_embedding function to return a known embedding."""
+
+        def mock_embedding(text):
+            return sample_embedding
+
+        monkeypatch.setattr("app.services.db_vector_crud.get_embedding", mock_embedding)
+        return mock_embedding
+
+    @pytest.fixture
+    def solutions_with_different_attributes(self, test_session):
+        """Create multiple solutions with different categories and keywords."""
+        solutions = []
+
+        # Compute solutions
+        tech_solution1 = Solution(
+            name="Cloud Computing Platform",
+            category="Compute",
+            description="Scalable cloud infrastructure",
+            use_cases={"web_hosting": True},
+            keywords=["cloud", "compute", "scalable"],
+            pricing_model=PricingModels.ON_DEMAND,
+        )
+        tech_solution2 = Solution(
+            name="Container Service",
+            category="Compute",
+            description="Container orchestration platform",
+            use_cases={"microservices": True},
+            keywords=["container", "docker", "kubernetes"],
+            pricing_model=PricingModels.ON_DEMAND,
+        )
+
+        # Database solutions
+        db_solution = Solution(
+            name="Managed Database",
+            category="Database",
+            description="Fully managed database service",
+            use_cases={"data_storage": True},
+            keywords=["database", "managed", "sql"],
+            pricing_model=PricingModels.ON_DEMAND,
+        )
+
+        for sol in [tech_solution1, tech_solution2, db_solution]:
+            test_session.add(sol)
+
+        test_session.commit()
+        for sol in [tech_solution1, tech_solution2, db_solution]:
+            test_session.refresh(sol)
+            solutions.append(sol)
+
+        return solutions
+
+    @pytest.fixture
+    def solution_vectors_with_filters(
+        self, test_session, solutions_with_different_attributes
+    ):
+        """Create solution vectors for the solutions with different attributes."""
+        vectors = []
+        for solution in solutions_with_different_attributes:
+            embedding = np.random.rand(384).tolist()
+            solution_vector = SolutionVector(
+                solution_id=solution.id, embedding=embedding
+            )
+            test_session.add(solution_vector)
+            vectors.append(solution_vector)
+
+        test_session.commit()
+        for vec in vectors:
+            test_session.refresh(vec)
+        return vectors
+
+    def test_search_with_no_filters(
+        self, test_session, solution_vectors_with_filters, mock_get_embedding
+    ):
+        """Test searching without any filters."""
+        results = vector_crud.search_solution_with_filters(
+            query="test query", category="", keywords=[], limit=5, threshold=1.0
+        )
+
+        assert isinstance(results, list)
+        assert len(results) <= 5
+
+    def test_search_with_category_filter(
+        self, test_session, solution_vectors_with_filters, mock_get_embedding
+    ):
+        """Test searching with category filter."""
+        results = vector_crud.search_solution_with_filters(
+            query="test query", category="Compute", keywords=[], limit=5, threshold=1.0
+        )
+
+        assert isinstance(results, list)
+        # Should find solutions in Compute category
+
+    def test_search_with_keyword_filter(
+        self, test_session, solution_vectors_with_filters, mock_get_embedding
+    ):
+        """Test searching with keyword filter."""
+        results = vector_crud.search_solution_with_filters(
+            query="test query", category="", keywords=["cloud"], limit=5, threshold=1.0
+        )
+
+        assert isinstance(results, list)
+        # Should find solutions with 'cloud' in keywords
+
+    def test_search_with_multiple_keywords(
+        self, test_session, solution_vectors_with_filters, mock_get_embedding
+    ):
+        """Test searching with multiple keywords."""
+        results = vector_crud.search_solution_with_filters(
+            query="test query",
+            category="",
+            keywords=["cloud", "compute"],
+            limit=5,
+            threshold=1.0,
+        )
+
+        assert isinstance(results, list)
+
+    def test_search_returns_correct_structure(
+        self, test_session, solution_vectors_with_filters, mock_get_embedding
+    ):
+        """Test that results have the correct structure."""
+        results = vector_crud.search_solution_with_filters(
+            query="test query", category="", keywords=[], limit=5, threshold=1.0
+        )
+
+        if results:
+            for result in results:
+                assert "id" in result
+                assert "solution_id" in result
+                assert "distance" in result
+                assert isinstance(result["id"], int)
+                assert isinstance(result["solution_id"], int)
+                assert isinstance(result["distance"], float)
+
+    def test_search_with_limit(
+        self, test_session, solution_vectors_with_filters, mock_get_embedding
+    ):
+        """Test that limit parameter works correctly."""
+        results = vector_crud.search_solution_with_filters(
+            query="test query", category="", keywords=[], limit=2, threshold=1.0
+        )
+
+        assert len(results) <= 2
+
+    def test_search_with_threshold(
+        self, test_session, solution_vectors_with_filters, mock_get_embedding
+    ):
+        """Test that threshold parameter filters results."""
+        results_low = vector_crud.search_solution_with_filters(
+            query="test query", category="", keywords=[], limit=5, threshold=0.0
+        )
+
+        results_high = vector_crud.search_solution_with_filters(
+            query="test query", category="", keywords=[], limit=5, threshold=1.0
+        )
+
+        assert len(results_high) >= len(results_low)
+
+    def test_search_empty_results(self, test_session, mock_get_embedding):
+        """Test searching with no matching results."""
+        results = vector_crud.search_solution_with_filters(
+            query="test query",
+            category="NonExistentCategory",
+            keywords=[],
+            limit=5,
+            threshold=1.0,
+        )
+
+        assert isinstance(results, list)
+
+
+class TestSearchInteractionVectorWithFilters:
+    """Test suite for search_interaction_vector_with_filters function."""
+
+    @pytest.fixture
+    def mock_get_embedding(self, monkeypatch, sample_embedding):
+        """Mock the get_embedding function to return a known embedding."""
+
+        def mock_embedding(text):
+            return sample_embedding
+
+        monkeypatch.setattr("app.services.db_vector_crud.get_embedding", mock_embedding)
+        return mock_embedding
+
+    @pytest.fixture
+    def interactions_with_different_types(self, test_session, sample_prospect):
+        """Create multiple interactions with different types and content."""
+        interactions = []
+
+        # Email interactions
+        email1 = Interaction(
+            prospect_id=sample_prospect.id,
+            interaction_type=InteractionType.EMAIL,
+            interaction_date=datetime.now(),
+            subject="Product Demo",
+            content="Interested in cloud computing solutions",
+        )
+        email2 = Interaction(
+            prospect_id=sample_prospect.id,
+            interaction_type=InteractionType.EMAIL,
+            interaction_date=datetime.now(),
+            subject="Follow Up",
+            content="Following up on database requirements",
+        )
+
+        # Call interaction
+        call = Interaction(
+            prospect_id=sample_prospect.id,
+            interaction_type=InteractionType.CALL,
+            interaction_date=datetime.now(),
+            subject="Initial Call",
+            content="Discussion about infrastructure needs",
+        )
+
+        for interaction in [email1, email2, call]:
+            test_session.add(interaction)
+
+        test_session.commit()
+        for interaction in [email1, email2, call]:
+            test_session.refresh(interaction)
+            interactions.append(interaction)
+
+        return interactions
+
+    @pytest.fixture
+    def interaction_vectors_with_filters(
+        self, test_session, interactions_with_different_types
+    ):
+        """Create interaction vectors for interactions with different types."""
+        vectors = []
+        for interaction in interactions_with_different_types:
+            embedding = np.random.rand(384).tolist()
+            interaction_vector = InteractionVector(
+                interaction_id=interaction.id, embedding=embedding
+            )
+            test_session.add(interaction_vector)
+            vectors.append(interaction_vector)
+
+        test_session.commit()
+        for vec in vectors:
+            test_session.refresh(vec)
+        return vectors
+
+    def test_search_by_prospect_id(
+        self,
+        test_session,
+        sample_prospect,
+        interaction_vectors_with_filters,
+        mock_get_embedding,
+    ):
+        """Test searching interactions by prospect_id."""
+        results = vector_crud.search_interaction_vector_with_filters(
+            query="test query",
+            prospect_id=sample_prospect.id,
+            interaction_type=None,
+            keywords=[],
+            limit=5,
+            threshold=1.0,
+        )
+
+        assert isinstance(results, list)
+        assert len(results) <= 5
+
+    def test_search_with_interaction_type_filter(
+        self,
+        test_session,
+        sample_prospect,
+        interaction_vectors_with_filters,
+        mock_get_embedding,
+    ):
+        """Test searching with interaction type filter."""
+        results = vector_crud.search_interaction_vector_with_filters(
+            query="test query",
+            prospect_id=sample_prospect.id,
+            interaction_type=InteractionType.EMAIL,
+            keywords=[],
+            limit=5,
+            threshold=1.0,
+        )
+
+        assert isinstance(results, list)
+        # Should only return email interactions
+
+    def test_search_with_keyword_filter(
+        self,
+        test_session,
+        sample_prospect,
+        interaction_vectors_with_filters,
+        mock_get_embedding,
+    ):
+        """Test searching with keyword filter."""
+        results = vector_crud.search_interaction_vector_with_filters(
+            query="test query",
+            prospect_id=sample_prospect.id,
+            interaction_type=None,
+            keywords=["cloud"],
+            limit=5,
+            threshold=1.0,
+        )
+
+        assert isinstance(results, list)
+
+    def test_search_with_all_filters(
+        self,
+        test_session,
+        sample_prospect,
+        interaction_vectors_with_filters,
+        mock_get_embedding,
+    ):
+        """Test searching with all filters combined."""
+        results = vector_crud.search_interaction_vector_with_filters(
+            query="test query",
+            prospect_id=sample_prospect.id,
+            interaction_type=InteractionType.EMAIL,
+            keywords=["cloud"],
+            limit=5,
+            threshold=1.0,
+        )
+
+        assert isinstance(results, list)
+
+    def test_search_returns_correct_structure(
+        self,
+        test_session,
+        sample_prospect,
+        interaction_vectors_with_filters,
+        mock_get_embedding,
+    ):
+        """Test that results have the correct structure."""
+        results = vector_crud.search_interaction_vector_with_filters(
+            query="test query",
+            prospect_id=sample_prospect.id,
+            interaction_type=None,
+            keywords=[],
+            limit=5,
+            threshold=1.0,
+        )
+
+        if results:
+            for result in results:
+                assert "id" in result
+                assert "interaction_id" in result
+                assert "distance" in result
+                assert isinstance(result["id"], int)
+                assert isinstance(result["interaction_id"], int)
+                assert isinstance(result["distance"], float)
+
+    def test_search_with_limit(
+        self,
+        test_session,
+        sample_prospect,
+        interaction_vectors_with_filters,
+        mock_get_embedding,
+    ):
+        """Test that limit parameter works correctly."""
+        results = vector_crud.search_interaction_vector_with_filters(
+            query="test query",
+            prospect_id=sample_prospect.id,
+            interaction_type=None,
+            keywords=[],
+            limit=2,
+            threshold=1.0,
+        )
+
+        assert len(results) <= 2
+
+    def test_search_with_threshold(
+        self,
+        test_session,
+        sample_prospect,
+        interaction_vectors_with_filters,
+        mock_get_embedding,
+    ):
+        """Test that threshold parameter filters results."""
+        results_low = vector_crud.search_interaction_vector_with_filters(
+            query="test query",
+            prospect_id=sample_prospect.id,
+            interaction_type=None,
+            keywords=[],
+            limit=5,
+            threshold=0.0,
+        )
+
+        results_high = vector_crud.search_interaction_vector_with_filters(
+            query="test query",
+            prospect_id=sample_prospect.id,
+            interaction_type=None,
+            keywords=[],
+            limit=5,
+            threshold=1.0,
+        )
+
+        assert len(results_high) >= len(results_low)
+
+    def test_search_nonexistent_prospect(
+        self, test_session, interaction_vectors_with_filters, mock_get_embedding
+    ):
+        """Test searching for interactions of a non-existent prospect."""
+        results = vector_crud.search_interaction_vector_with_filters(
+            query="test query",
+            prospect_id=99999999,
+            interaction_type=None,
+            keywords=[],
+            limit=5,
+            threshold=1.0,
+        )
+
+        assert isinstance(results, list)
+        assert len(results) == 0
+
+    def test_search_with_different_interaction_types(
+        self,
+        test_session,
+        sample_prospect,
+        interaction_vectors_with_filters,
+        mock_get_embedding,
+    ):
+        """Test searching with different interaction types."""
+        for interaction_type in [InteractionType.EMAIL, InteractionType.CALL]:
+            results = vector_crud.search_interaction_vector_with_filters(
+                query="test query",
+                prospect_id=sample_prospect.id,
+                interaction_type=interaction_type,
+                keywords=[],
+                limit=5,
+                threshold=1.0,
+            )
+            assert isinstance(results, list)
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
