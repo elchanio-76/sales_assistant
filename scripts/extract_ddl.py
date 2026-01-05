@@ -1,6 +1,6 @@
 #!/home/lchanio/projects/sales_assistant/.venv/bin/python
 
-
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import MetaData, create_engine, inspect
 import os
 from dotenv import load_dotenv

@@ -1,0 +1,21 @@
+full_name,email,linkedin_url,location,company_id,status,is_active,last_contacted_at
+Sarah Mitchell,sarah.mitchell@globalbankingsolutions.example.com,https://linkedin.com/in/sarah-mitchell-cto,New York NY,1,NEW,TRUE,
+James Chen,james.chen@globalbankingsolutions.example.com,https://linkedin.com/in/james-chen-vp-eng,New York NY,1,CONTACTED,TRUE,2025-01-02
+Maria Rodriguez,maria.rodriguez@globalbankingsolutions.example.com,https://linkedin.com/in/maria-rodriguez-infra,Boston MA,1,ENGAGED,TRUE,2025-01-03
+David Park,david.park@globalbankingsolutions.example.com,https://linkedin.com/in/david-park-cloud,Chicago IL,1,QUALIFIED,TRUE,2025-01-04
+Dr. Emily Watson,emily.watson@meditechinnovations.example.com,https://linkedin.com/in/dr-emily-watson-cio,San Francisco CA,2,NEW,TRUE,
+Michael Chang,michael.chang@meditechinnovations.example.com,https://linkedin.com/in/michael-chang-devops,San Francisco CA,2,RESEARCHED,TRUE,
+Jennifer Taylor,jennifer.taylor@meditechinnovations.example.com,https://linkedin.com/in/jennifer-taylor-data,Seattle WA,2,CONTACTED,TRUE,2025-01-01
+Robert Kim,robert.kim@meditechinnovations.example.com,https://linkedin.com/in/robert-kim-security,Portland OR,2,ENGAGED,TRUE,2024-12-28
+Lisa Anderson,lisa.anderson@precisionmfg.example.com,https://linkedin.com/in/lisa-anderson-vp-it,Detroit MI,3,NEW,TRUE,
+Thomas Brown,thomas.brown@precisionmfg.example.com,https://linkedin.com/in/thomas-brown-ops,Detroit MI,3,CONTACTED,TRUE,2024-12-30
+Patricia Davis,patricia.davis@precisionmfg.example.com,https://linkedin.com/in/patricia-davis-iot,Cleveland OH,3,QUALIFIED,TRUE,2025-01-05
+Kevin Wilson,kevin.wilson@precisionmfg.example.com,https://linkedin.com/in/kevin-wilson-ai,Pittsburgh PA,3,ENGAGED,TRUE,2025-01-02
+Angela Martinez,angela.martinez@greenpowerenergy.example.com,https://linkedin.com/in/angela-martinez-cto,Houston TX,4,NEW,TRUE,
+Christopher Lee,christopher.lee@greenpowerenergy.example.com,https://linkedin.com/in/christopher-lee-grid,Austin TX,4,RESEARCHED,TRUE,
+Michelle Thompson,michelle.thompson@greenpowerenergy.example.com,https://linkedin.com/in/michelle-thompson-solar,Denver CO,4,CONTACTED,TRUE,2024-12-29
+Daniel Garcia,daniel.garcia@greenpowerenergy.example.com,https://linkedin.com/in/daniel-garcia-analytics,Phoenix AZ,4,ENGAGED,TRUE,2025-01-01
+Jessica Moore,jessica.moore@nextgenretail.example.com,https://linkedin.com/in/jessica-moore-vp-tech,Los Angeles CA,5,NEW,TRUE,
+Andrew White,andrew.white@nextgenretail.example.com,https://linkedin.com/in/andrew-white-ecommerce,San Diego CA,5,QUALIFIED,TRUE,2025-01-04
+Rebecca Harris,rebecca.harris@nextgenretail.example.com,https://linkedin.com/in/rebecca-harris-ml,Seattle WA,5,CONTACTED,TRUE,2025-01-03
+Brandon Clark,brandon.clark@nextgenretail.example.com,https://linkedin.com/in/brandon-clark-architect,San Francisco CA,5,ENGAGED,TRUE,2024-12-31

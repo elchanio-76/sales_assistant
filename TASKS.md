@@ -123,14 +123,13 @@
 
 ### 4.1 AWS Solutions Seed Data
 
-- [ ] Create data/seeds/aws_solutions.csv template
-- [ ] Generate 30-50 AWS solution entries (use LLM or manual)
-- [ ] Include fields: name, category, description, use_cases, industries, keywords, pricing_model
-- [ ] Validate CSV format
-- [ ] Create scripts/seed_aws_solutions.py
-- [ ] Implement CSV parsing and PostgreSQL insertion
-- [ ] Test seeding script execution
-- [ ] Verify data in PostgreSQL
+- [x] Create data/seeds/aws_solutions.csv template -> Single script for all data load_seed_data.py
+- [x] Generate 30-50 AWS solution entries (use LLM or manual)
+- [x] Include fields: name, category, description, use_cases, industries, keywords, pricing_model
+- [x] Validate CSV formaly
+- [x] Implement CSV parsing and PostgreSQL insertion
+- [x] Test seeding script execution
+- [x] Verify data in PostgreSQL
 
 ### 4.2 Vector Population for AWS Solutions
 
@@ -144,11 +143,11 @@
 
 ### 4.3 Test Prospects Seed Data
 
-- [ ] Create data/seeds/test_prospects.csv
-- [ ] Generate 10-15 realistic prospect entries
-- [ ] Include: linkedin_url, full_name, title, company_name, industry, location
-- [ ] Ensure diverse industries and company sizes
-- [ ] Document CSV format for prospect imports
+- [x] Create data/seeds/test_prospects.csv -> Single script for all data load_seed_data.py
+- [x] Generate 10-15 realistic prospect entries
+- [x] Include: linkedin_url, full_name, title, company_name, industry, location
+- [x] Ensure diverse industries and company sizes
+- [x] Document CSV format for prospect imports
 
 ---
 
