@@ -25,6 +25,7 @@ from datetime import datetime
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+
 from app.models.database import (
     Industry,
     Company,
