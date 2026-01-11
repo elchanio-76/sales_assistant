@@ -356,7 +356,7 @@ GET    /prospects/{prospect_id}/research/latest
 
 **Outreach:**
 
-```
+```bash
 POST   /prospects/{prospect_id}/outreach
 GET    /prospects/{prospect_id}/outreach
 PATCH  /outreach/{draft_id}
@@ -364,7 +364,7 @@ PATCH  /outreach/{draft_id}
 
 **Events:**
 
-```
+```bash
 POST   /events
 GET    /events
 GET    /events/{event_id}
@@ -373,7 +373,7 @@ POST   /events/{event_id}/match-prospects
 
 **AWS Solutions:**
 
-```
+```bash
 GET    /solutions
 POST   /solutions
 GET    /solutions/search
@@ -381,14 +381,14 @@ GET    /solutions/search
 
 **Interactions:**
 
-```
+```bash
 POST   /prospects/{prospect_id}/interactions
 GET    /prospects/{prospect_id}/interactions
 ```
 
 **System:**
 
-```
+```bash
 GET    /health
 GET    /metrics/llm-usage
 ```

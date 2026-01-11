@@ -24,6 +24,7 @@ uv run app/models/database.py create_database
 ```
 
 Creates database tables from models. Needs empty DB to be created first.
+Database will be created according to the latest schema. Use `alembic stamp head` to stamp a new head after creating it, if you want to retain ORM functionality for further development.
 
 `scripts/document_db.sh`: uses eralchemy2 to extract ER diagram from database, then extracts ddl and feeds into claude for documentation. Output is saved in `docs/schema.md` and `docs/schema.png`.
 

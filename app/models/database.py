@@ -1,4 +1,13 @@
-from sqlalchemy import Integer, String, ForeignKey, DateTime, Boolean, Text, Float, Index
+from sqlalchemy import (
+    Integer,
+    String,
+    ForeignKey,
+    DateTime,
+    Boolean,
+    Text,
+    Float,
+    Index,
+)
 from enum import Enum
 from sqlalchemy.dialects.postgresql import JSONB, ENUM
 from sqlalchemy.orm import relationship, Mapped, mapped_column, DeclarativeBase
@@ -7,6 +16,7 @@ from typing import Optional
 import pytz
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import text
+from app.config.settings import Settings
 
 
 # Enums
@@ -36,6 +46,15 @@ class InteractionType(Enum):
     LINKEDIN = "linkedin"
 
 
+class OutreachStatus(Enum):
+    CREATED = "created"
+    SENT = "sent"
+    ACKNOWLEDGED = "acknowledged"
+    UNREAD = "unread"
+    RESPONDED = "responded"
+    DECLINED = "declined"
+
+
 # Tables
 class Base(DeclarativeBase):
     pass
@@ -47,15 +66,17 @@ class Prospect(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     full_name: Mapped[str] = mapped_column(String(255))
     email: Mapped[str] = mapped_column(String(255))
-    linkedin_url: Mapped[Optional[str]] = mapped_column(String(255), unique=True, index=True)
+    linkedin_url: Mapped[Optional[str]] = mapped_column(
+        String(255), unique=True, index=True
+    )
     location: Mapped[Optional[str]] = mapped_column(String(255))
     company_id: Mapped[int] = mapped_column(ForeignKey("companies.id"))
     last_contacted_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     status: Mapped[ProspectStatus] = mapped_column(
-        ENUM(ProspectStatus, name="prospect_status"), 
+        ENUM(ProspectStatus, name="prospect_status"),
         default=ProspectStatus.NEW,
-        index=True
+        index=True,
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.now(tz=pytz.timezone("Europe/Athens"))
@@ -152,8 +173,8 @@ class Solution(Base):
     use_cases: Mapped[JSONB] = mapped_column(JSONB, nullable=True)
     keywords: Mapped[Optional[JSONB]] = mapped_column(JSONB, nullable=True)
     pricing_model: Mapped[Enum] = mapped_column(
-        ENUM(PricingModels, name="pricing_models")
-    )  # TODO: Change to enum
+        ENUM(PricingModels, name="pricing_models"), default=PricingModels.ON_DEMAND
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.now(tz=pytz.timezone("Europe/Athens"))
     )
@@ -220,7 +241,7 @@ class Interaction(Base):
     )
     interaction_type: Mapped[Enum] = mapped_column(
         ENUM(InteractionType, name="interaction_types")
-    )  # TODO: Change to enum
+    )
     interaction_date: Mapped[datetime] = mapped_column(DateTime)
     subject: Mapped[str] = mapped_column(String(255))
     content: Mapped[str] = mapped_column(Text)
@@ -248,7 +269,9 @@ class OutreachDraft(Base):
     )
     draft_type: Mapped[str] = mapped_column(String(255))  # TODO: Change to enum
     content: Mapped[str] = mapped_column(Text)
-    status: Mapped[str] = mapped_column(String(255))  # TODO: Change to enum
+    status: Mapped[OutreachStatus] = mapped_column(
+        ENUM(OutreachStatus, name="outreach_status"), default=OutreachStatus.CREATED
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.now(tz=pytz.timezone("Europe/Athens"))
     )
@@ -274,8 +297,7 @@ class LLMUsageLog(Base):
     latency_ms: Mapped[int] = mapped_column(Integer, default=0)
     cost: Mapped[float] = mapped_column(Float, default=0.0)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.now(tz=pytz.timezone("Europe/Athens")),
-        index=True
+        DateTime, default=datetime.now(tz=pytz.timezone("Europe/Athens")), index=True
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,
@@ -283,12 +305,15 @@ class LLMUsageLog(Base):
         onupdate=datetime.now(tz=pytz.timezone("Europe/Athens")),
     )
 
+
 class SolutionVector(Base):
     __tablename__ = "solution_vectors"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     solution_id: Mapped[int] = mapped_column(ForeignKey("solutions.id"))
-    embedding: Mapped[Vector] = mapped_column(Vector(384))  # 384 dimensions for all-MiniLM-L6-v2
+    embedding: Mapped[Vector] = mapped_column(
+        Vector(384)
+    )  # 384 dimensions for all-MiniLM-L6-v2
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.now(tz=pytz.timezone("Europe/Athens"))
     )
@@ -302,20 +327,23 @@ class SolutionVector(Base):
     # Add index
     __table_args__ = (
         Index(
-            'ix_solutions_embedding_hnsw',
-            'embedding',
-            postgresql_using='hnsw',
-            postgresql_with={'m': 16, 'ef_construction': 64},
-            postgresql_ops={'embedding': 'vector_cosine_ops'}
+            "ix_solutions_embedding_hnsw",
+            "embedding",
+            postgresql_using="hnsw",
+            postgresql_with={"m": 16, "ef_construction": 64},
+            postgresql_ops={"embedding": "vector_cosine_ops"},
         ),
     )
+
 
 class InteractionVector(Base):
     __tablename__ = "interaction_vectors"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     interaction_id: Mapped[int] = mapped_column(ForeignKey("interactions.id"))
-    embedding: Mapped[Vector] = mapped_column(Vector(384))  # 384 dimensions for all-MiniLM-L6-v2
+    embedding: Mapped[Vector] = mapped_column(
+        Vector(384)
+    )  # 384 dimensions for all-MiniLM-L6-v2
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.now(tz=pytz.timezone("Europe/Athens"))
     )
@@ -329,11 +357,11 @@ class InteractionVector(Base):
     # Add index
     __table_args__ = (
         Index(
-            'ix_interactions_embedding_hnsw',
-            'embedding',
-            postgresql_using='hnsw',
-            postgresql_with={'m': 16, 'ef_construction': 64},
-            postgresql_ops={'embedding': 'vector_cosine_ops'}
+            "ix_interactions_embedding_hnsw",
+            "embedding",
+            postgresql_using="hnsw",
+            postgresql_with={"m": 16, "ef_construction": 64},
+            postgresql_ops={"embedding": "vector_cosine_ops"},
         ),
     )
 
@@ -343,9 +371,9 @@ class InteractionVector(Base):
 def create_database():
     from sqlalchemy import create_engine
 
-    engine = create_engine(
-        "postgresql://postgres:postgres@localhost:5432/sales_test", echo=True
-    )
+    settings = Settings()
+
+    engine = create_engine(settings.DB_URL, echo=True)
 
     # Enable pgvector extension
     with engine.connect() as conn:
