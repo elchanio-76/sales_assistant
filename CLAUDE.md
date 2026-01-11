@@ -83,10 +83,11 @@ pytest tests/unit/
 
 ```bash
 # Start FastAPI server (development mode, recommended)
-uv run fastapi dev app/main.py
+# Note: --reload-dir flags exclude logs/ from triggering reloads
+uv run fastapi dev app/main.py --reload-dir app --reload-dir scripts
 
-# Alternative: Start with uvicorn directly
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+# Alternative: Start with uvicorn directly (with logs excluded)
+uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 --reload-exclude "logs/*"
 
 # Health check
 curl http://localhost:8000/api/v1/health
@@ -176,6 +177,34 @@ When adding new CRUD operations:
 1. Add function to appropriate service file
 2. Use SQLAlchemy sessions properly (commit on write, rollback on error)
 3. For vector operations, ensure embeddings are generated via `vector_service.get_embedding()`
+
+### Converting SQLAlchemy Models to Pydantic (FastAPI Response Models)
+
+**Problem**: SQLAlchemy ORM objects cannot be unpacked with `**` like dictionaries.
+
+**Solution**: Use Pydantic's `from_attributes=True` config and `model_validate()` method:
+
+```python
+# 1. Configure Pydantic model (in app/models/api.py)
+class ProspectResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)  # Enable ORM mode
+
+    id: int
+    full_name: str
+    # ... other fields
+
+# 2. Convert in endpoint (in app/api/prospects.py)
+@router.get("/", response_model=list[ProspectResponse])
+async def get_prospects():
+    prospects = get_all_prospects()  # Returns list of SQLAlchemy objects
+    return [ProspectResponse.model_validate(prospect) for prospect in prospects]
+```
+
+**Key points**:
+- Add `model_config = ConfigDict(from_attributes=True)` to ALL Response models
+- Use `model_validate()` instead of `**object` unpacking
+- FastAPI automatically serializes to JSON when `response_model` is specified
+- All Response models in `api.py` already have this config enabled
 
 ### Logging
 

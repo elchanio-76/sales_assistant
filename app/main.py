@@ -9,6 +9,9 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import pytz
 
+from app.api.prospects import router as prospects_router
+from app.api.prospects import get_prospects
+
 settings = Settings()
 
 # Set up logging
@@ -68,7 +71,9 @@ async def log_requests(request: Request, call_next):
             "process_time_seconds": str(process_time.total_seconds()),
         },
     )
-    logger.info(f"{log_entry.timeStamp} - {log_entry.level.value} - {log_entry.message}")
+    logger.info(
+        f"{log_entry.timeStamp} - {log_entry.level.value} - {log_entry.message}"
+    )
     return response
 
 
@@ -87,7 +92,9 @@ async def handle_exception(request: Request, exc: Exception):
             "exception": str(exc),
         },
     )
-    logger.error(f"{log_entry.timeStamp} - {log_entry.level.value} - {log_entry.message}")
+    logger.error(
+        f"{log_entry.timeStamp} - {log_entry.level.value} - {log_entry.message}"
+    )
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"message": f"An error occurred: {str(exc)}"},
@@ -103,6 +110,7 @@ async def health_check():
 
 # Add the router to the app
 app.include_router(router)
+app.include_router(prospects_router)
 
 """
 def main():

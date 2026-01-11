@@ -3,9 +3,9 @@ models/api.py:
 Define JSON schemas and pydantic models for API calls.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
-from database import ProspectStatus, PricingModels, InteractionType
+from app.models.database import ProspectStatus, PricingModels, InteractionType
 import json
 
 
@@ -33,6 +33,8 @@ class ProspectUpdate(BaseModel):
 
 
 class ProspectResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     full_name: str
     email: str
@@ -62,6 +64,8 @@ class CompanyUpdate(BaseModel):
 
 
 class CompanyResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     name: str
     industry_id: int
@@ -91,6 +95,8 @@ class SolutionUpdate(BaseModel):
 
 
 class SolutionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     name: str
     category: str
@@ -126,6 +132,8 @@ class EventUpdate(BaseModel):
 
 
 class EventResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     event_type: str
     event_date: datetime
@@ -157,6 +165,8 @@ class ProspectResearchUpdate(BaseModel):
 
 
 class ProspectResearchResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     prospect_id: int
     research_summary: str
@@ -191,6 +201,8 @@ class InteractionUpdate(BaseModel):
 
 
 class InteractionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     prospect_id: int
     interaction_type: InteractionType
@@ -222,6 +234,8 @@ class OutreachDraftUpdate(BaseModel):
 
 
 class OutreachDraftResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     prospect_id: int
     event_id: int | None = None

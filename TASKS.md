@@ -184,10 +184,10 @@
 
 ### 5.3 API Routes - Prospects
 
-- [ ] Create app/api/routes.py
-- [ ] Implement POST /api/v1/prospects
+- [x] Create app/api/prospects.py
+- [x] Implement POST /api/v1/prospects
 - [ ] Implement GET /api/v1/prospects (with pagination)
-- [ ] Implement GET /api/v1/prospects/{prospect_id}
+- [x] Implement GET /api/v1/prospects/{prospect_id}
 - [ ] Implement PATCH /api/v1/prospects/{prospect_id}
 - [ ] Add input validation and error responses (404, 400)
 - [ ] Write API tests (tests/api/test_prospects_endpoints.py)
