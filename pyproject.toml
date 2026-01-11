@@ -10,6 +10,7 @@ dependencies = [
     "coverage>=7.13.1",
     "enum34>=1.1.10",
     "eralchemy2>=1.4.1",
+    "fastapi[standard]>=0.128.0",
     "pgvector>=0.4.2",
     "psycopg2-binary>=2.9.11",
     "pydantic>=2.12.5",
@@ -22,4 +23,5 @@ dependencies = [
     "sentence-transformers>=5.2.0",
     "sqlalchemy>=2.0.45",
     "typing>=3.10.0.0",
+    "uvicorn>=0.40.0",
 ]

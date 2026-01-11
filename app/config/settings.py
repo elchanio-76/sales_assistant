@@ -2,9 +2,11 @@ from pydantic_settings import BaseSettings
 from pydantic_settings import SettingsConfigDict
 from enum import Enum
 
+
 class VectorTables(Enum):
-    SOLUTIONS = "solution_vectors" 
+    SOLUTIONS = "solution_vectors"
     INTERACTIONS = "interaction_vectors"
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -21,6 +23,7 @@ class Settings(BaseSettings):
     LLM_RETRY_BACKOFF_FACTOR: int
     AWS_REGION: str
     AWS_SECRETS_MANAGER_NAME: str
+    TIMEZONE: str = "Europe/Athens"
 
 
 settings = Settings()
